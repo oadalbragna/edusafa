@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ref, onValue, get, query as firebaseQuery } from 'firebase/database';
-import { db } from '../services/firebase';
+import { getDb as db } from '../services/firebase';
 import { cache, generateCacheKey, getTTLOrPath } from '../services/cache.service';
 import { handleFirebaseError } from '../utils/errorHandler';
 

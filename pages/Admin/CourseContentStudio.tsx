@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ref, push, set, onValue, remove, serverTimestamp, update } from 'firebase/database';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
 import {

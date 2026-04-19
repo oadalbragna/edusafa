@@ -34,7 +34,7 @@ import {
   CartesianGrid, 
   Tooltip
 } from 'recharts';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { TelegramService } from '../../services/telegram.service';
 import { ref, onValue, push, set, update, remove } from 'firebase/database';
 import { useAuth } from '../../context/AuthContext';

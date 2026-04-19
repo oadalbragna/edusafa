@@ -14,7 +14,7 @@ import {
   AlertCircle,
   Filter
 } from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { ref, onValue, update, push, set, serverTimestamp } from 'firebase/database';
 import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import type { UserProfile } from '../../../types';

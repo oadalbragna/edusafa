@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Lucide from 'lucide-react';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { ref, onValue } from 'firebase/database';
 
 const Maintenance: React.FC = () => {

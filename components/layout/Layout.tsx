@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 
 import { ref, onValue, query, limitToLast } from 'firebase/database';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { SYS } from '../../constants/dbPaths';
 import { cn } from '../../utils/cn';
 import BottomDialog from '../common/BottomDialog';

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ref, get } from 'firebase/database';
-import { db } from '../services/firebase';
+import { getDb as db } from '../services/firebase';
 import { SYS } from '../constants/dbPaths';
 import { AuthService } from '../services/auth.service';
 import { logActivity } from '../utils/activityLogger';

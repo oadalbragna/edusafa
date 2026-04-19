@@ -21,7 +21,7 @@ import AddStudentForm from '../Admin/Actions/AddStudentForm';
 import AddTeacherForm from '../Admin/Actions/AddTeacherForm';
 import AddReportForm from '../Admin/Actions/AddReportForm';
 import AddClassForm from '../Admin/Actions/AddClassForm';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { useAuth } from '../../context/AuthContext';

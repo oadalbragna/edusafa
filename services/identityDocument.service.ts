@@ -6,7 +6,7 @@
  */
 
 import { ref, get, set, update, push } from 'firebase/database';
-import { db } from '../services/firebase';
+import { getDb as db } from '../services/firebase';
 import { SYS } from '../constants/dbPaths';
 import type { IdentityDocumentData } from '../components/parent/IdentityDocumentUpload';
 

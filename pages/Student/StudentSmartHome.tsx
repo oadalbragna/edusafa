@@ -15,7 +15,7 @@ import {
   RefreshCw, Check, AlertCircle, ExternalLink, Users, Link,
   Copy, QrCode, GraduationCap
 } from 'lucide-react';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { ref, get, onValue, query, orderByChild, limitToLast, update } from 'firebase/database';
 import { SYS, EDU } from '../../constants/dbPaths';
 import type { SliderItem } from '../../types';

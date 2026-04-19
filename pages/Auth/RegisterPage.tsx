@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { validateParentInviteCode } from '../../utils/parentLinkRequests';
 import { useRegister } from '../../hooks/useRegister';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { EDU } from '../../constants/dbPaths';
 import IdentityDocumentUpload from '../../components/parent/IdentityDocumentUpload';

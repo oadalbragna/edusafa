@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { SYS } from '../../constants/dbPaths';
 import { ref, get, update } from 'firebase/database';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { updateIdentityDocumentStatus } from '../../services/identityDocument.service';
 import type { ParentIdentityDocument } from '../../services/identityDocument.service';
 import type { UserProfile } from '../../types';

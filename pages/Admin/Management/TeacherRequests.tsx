@@ -17,7 +17,7 @@ import {
   XCircle,
   MessageCircle
 } from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { ref, onValue, update, get } from 'firebase/database';
 import { logActivity } from '../../../utils/activityLogger';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, ClipboardList, Loader2, CheckCircle2, MessageSquare } from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { ref, push, set } from 'firebase/database';
 import { SYS } from '../../../constants/dbPaths';
 

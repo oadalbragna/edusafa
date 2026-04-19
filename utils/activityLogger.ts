@@ -1,4 +1,4 @@
-import { db } from '../services/firebase';
+import { getDb as db } from '../services/firebase';
 import { ref, push, set, serverTimestamp } from 'firebase/database';
 import { SYS } from '../constants/dbPaths';
 

@@ -22,7 +22,7 @@ import {
   Save,
   Filter
 } from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { ref, onValue, remove, update } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import type { Class } from '../../../types';

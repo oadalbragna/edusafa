@@ -7,7 +7,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { ref, push, set, serverTimestamp, onValue, remove } from 'firebase/database';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
 import { ImageProcessingService, FileCategory } from '../../services/api/ImageProcessingService';

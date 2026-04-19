@@ -18,7 +18,7 @@ import {
   QrCode
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { TelegramService } from '../../services/telegram.service';
 import { ref, update, get } from 'firebase/database';
 import { SYS } from '../../constants/dbPaths';

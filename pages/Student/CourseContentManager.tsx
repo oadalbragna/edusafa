@@ -4,7 +4,7 @@ import {
   ArrowRight, School, ArrowLeft, BookOpen
 } from 'lucide-react';
 import { ref, onValue } from 'firebase/database';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { useTheme } from '../../context/ThemeContext';
 
 // School View Only

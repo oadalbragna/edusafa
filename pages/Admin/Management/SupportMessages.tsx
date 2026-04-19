@@ -17,7 +17,7 @@ import {
   ShieldAlert,
   Tag
 } from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { ref, onValue, update, remove } from 'firebase/database';
 

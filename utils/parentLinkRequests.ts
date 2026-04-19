@@ -1,5 +1,5 @@
 import { ref, get, update, push, set } from 'firebase/database';
-import { db } from '../services/firebase';
+import { getDb as db } from '../services/firebase';
 import { SYS } from '../constants/dbPaths';
 import type { ParentLinkRequest } from '../types';
 

@@ -11,7 +11,7 @@
  */
 
 import { ref, get, set, update, remove, push, serverTimestamp } from 'firebase/database';
-import { db } from '../services/firebase';
+import { getDb as db } from '../services/firebase';
 
 // ============================================================================
 // Types

@@ -22,7 +22,7 @@ import { uploadProofDocumentToRequest } from '../../utils/parentLinkRequests';
 import ProofDocumentUpload from '../../components/parent/ProofDocumentUpload';
 import IdentityDocumentUpload from '../../components/parent/IdentityDocumentUpload';
 import { ref, get, onValue } from 'firebase/database';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { SYS } from '../../constants/dbPaths';
 import type { ProofDocumentType } from '../../services/documentUpload.service';
 import type { IdentityDocumentData } from '../../components/parent/IdentityDocumentUpload';

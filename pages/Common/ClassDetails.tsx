@@ -20,7 +20,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { SYS, EDU } from '../../constants/dbPaths';
 import { ref, get, set, push, update, remove, onValue, off } from 'firebase/database';
 import { useAuth } from '../../context/AuthContext';

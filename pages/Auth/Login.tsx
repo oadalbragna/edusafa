@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLogin } from '../../hooks/useLogin';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { AuthInput } from '../../components/auth/AuthInput';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { SYS } from '../../constants/dbPaths';
 import { clearAllPlatformCache, forceFullRefresh } from '../../utils/cacheManager';

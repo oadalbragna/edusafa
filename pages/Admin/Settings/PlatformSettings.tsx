@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Lucide from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { ref, get, set, update } from 'firebase/database';
 import type { PlatformSettings } from '../../../types';
 import PolicyEditor from '../../../components/Admin/Settings/PolicyEditor';

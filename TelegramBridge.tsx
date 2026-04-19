@@ -8,7 +8,8 @@ import {
   Zap
 } from 'lucide-react';
 import { ref, get, update, push, serverTimestamp, set } from 'firebase/database';
-import { db } from './services/firebase';
+import { getDb } from './services/firebase';
+
 import { SYS } from './constants/dbPaths';
 
 interface TelegramBridgeProps {

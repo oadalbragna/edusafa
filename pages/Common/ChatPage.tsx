@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { TelegramService } from '../../services/telegram.service';
 import { ref, push, set, onValue, serverTimestamp, query, limitToLast, get, remove, update } from 'firebase/database';

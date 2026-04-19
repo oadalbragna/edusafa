@@ -18,7 +18,7 @@ import {
   Save,
   ShieldCheck
 } from 'lucide-react';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { ref, onValue, push, set, remove, update } from 'firebase/database';
 import { useAuth } from '../../context/AuthContext';
 import { SYS, EDU } from '../../constants/dbPaths';

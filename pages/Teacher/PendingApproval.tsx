@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { ref, push, set, serverTimestamp, onValue } from 'firebase/database';
 

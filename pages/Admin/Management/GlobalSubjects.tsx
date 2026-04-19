@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Save
 } from 'lucide-react';
-import { db } from '../../../services/firebase';
+import { getDb as db } from '../../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { ref, onValue, set, push, remove, update } from 'firebase/database';
 import Modal from '../../../components/common/Modal';

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ref, get, query, orderByChild, equalTo, onValue } from 'firebase/database';
-import { db } from '../../services/firebase';
+import { getDb as db } from '../../services/firebase';
 import { SYS, EDU } from '../../constants/dbPaths';
 import type { UserProfile } from '../../types';
 
