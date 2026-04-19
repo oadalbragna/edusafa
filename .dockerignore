@@ -1,0 +1,47 @@
+# Docker
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.env.local
+.env.production
+
+# Editor directories
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Debug
+npm-debug.log*
+jspm-debug.log*
+
+# Tests
+coverage
+.nyc_output
+
+# Build
+*.tsbuildinfo
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs
+
+# Proxy tests
+proxy/__tests__
+proxy/*.test.ts
+proxy/*.spec.ts

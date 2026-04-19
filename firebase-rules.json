@@ -1,0 +1,179 @@
+{
+  "rules": {
+    "sys": {
+      "users": {
+        "$uid": {
+          // Users can read their own data
+          ".read": "auth !== null && (auth.uid === $uid || root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin'])",
+          // Users can update their own data (except role, status)
+          ".write": "auth !== null && (auth.uid === $uid || root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin'])",
+          "$other": {
+            // Prevent writing to protected fields
+            ".validate": "!newData.isWrite() || 
+                         newData.parent().child('role').val() === root.child('sys/users').child(auth.uid).child('role').val() ||
+                         root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+          }
+        },
+        // Admin can read all users
+        ".indexOn": ["role", "status", "email", "classId"]
+      },
+      "system": {
+        // Only admins can read/write system settings
+        ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+        "settings": {
+          "branding": {
+            // Teachers can read branding for their classes
+            ".read": "true",
+            ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+          }
+        },
+        "slider": {
+          ".read": "true",
+          ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+        }
+      },
+      "maintenance": {
+        "activities": {
+          // Only admins can read activity logs
+          ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+          ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+          ".indexOn": ["userId", "type", "timestamp"]
+        },
+        "support_tickets": {
+          // Users can read/write their own tickets, admins can read all
+          ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin'] || 
+                    data.child(auth.uid).exists() || newdata.child(auth.uid).exists()",
+          ".write": "auth !== null",
+          "$uid": {
+            ".indexOn": ["status", "createdAt"]
+          }
+        },
+        "cashipay_logs": {
+          // Only admins can read payment logs
+          ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+          ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+        }
+      },
+      "config": {
+        "teacher_class_requests": {
+          // Teachers can create their own requests, admins can read/write all
+          ".read": "true",
+          ".write": "auth !== null",
+          "$requestId": {
+            ".validate": "newData.child('teacherId').val() === auth.uid || 
+                         root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+          }
+        }
+      },
+      "financial": {
+        "payments": {
+          // Only admins and parents can read, admins can write
+          ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'parent']",
+          ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+          ".indexOn": ["studentId", "status", "dueDate"]
+        }
+      },
+      "announcements": {
+        // Everyone can read, only admins can write
+        ".read": "true",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+        ".indexOn": ["target", "timestamp", "priority"]
+      }
+    },
+    "edu": {
+      "sch": {
+        "classes": {
+          // Teachers can read classes they're assigned to, students can read their class
+          ".read": "true",
+          ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+          "$classId": {
+            "subjects": {
+              ".read": "true",
+              ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+            },
+            "materials": {
+              // Teachers can write materials for their subjects
+              ".read": "true",
+              ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher']",
+              "$subjectId": {
+                ".indexOn": ["type", "createdAt"]
+              }
+            },
+            "students": {
+              ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher'] ||
+                        root.child('sys/users').child(auth.uid).child('classId').val() === $classId",
+              ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+            }
+          }
+        }
+      },
+      "courses": {
+        // Everyone can read global subjects, only admins can write
+        ".read": "true",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']"
+      },
+      "grades": {
+        // Students can read their own grades, teachers can write for their subjects
+        ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher'] ||
+                  data.child($classId).child(auth.uid).exists()",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher']",
+        "$classId": {
+          ".indexOn": ["studentId", "subject", "score"]
+        }
+      },
+      "attendance": {
+        // Students can read their own attendance, teachers can write
+        ".read": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher', 'student']",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher']",
+        ".indexOn": ["date", "classId", "studentId"]
+      },
+      "assignments": {
+        ".read": "true",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher']",
+        ".indexOn": ["classId", "dueDate", "teacherId"]
+      },
+      "submissions": {
+        // Students can submit, teachers can grade
+        ".read": "true",
+        ".write": "auth !== null",
+        "$assignmentId": {
+          "$submissionId": {
+            "grade": {
+              ".validate": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin', 'teacher']"
+            }
+          }
+        }
+      }
+    },
+    "comm": {
+      "chats": {
+        // Users can only read/write their own chats
+        ".read": "auth !== null && 
+                  (data.child(auth.uid).exists() || 
+                   newData.child(auth.uid).exists() ||
+                   root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin'])",
+        ".write": "auth !== null",
+        "$chatId": {
+          ".indexOn": ["lastTimestamp", "participants"]
+        }
+      },
+      "messages": {
+        // Users can only read/write messages in their chats
+        ".read": "auth !== null",
+        ".write": "auth !== null",
+        "$chatId": {
+          ".indexOn": ["timestamp", "senderId"]
+        }
+      },
+      "notifications": {
+        // Users can read their own notifications
+        ".read": "auth !== null && 
+                  (data.child(auth.uid).exists() || 
+                   root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin'])",
+        ".write": "root.child('sys/users').child(auth.uid).child('role').val() in ['admin', 'super_admin']",
+        ".indexOn": ["userId", "timestamp", "read"]
+      }
+    }
+  }
+}
