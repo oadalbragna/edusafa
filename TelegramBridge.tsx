@@ -29,7 +29,7 @@ interface UploadHistory {
 type StorageCategory = 'lectures' | 'recordings' | 'private_chats' | 'group_chats' | 'replies' | 'assignments' | 'general';
 
 const TelegramBridge: React.FC<TelegramBridgeProps> = ({ onBack }) => {
-  const db = getDb();
+  const db = db;
   const [loading, setLoading] = useState(false);
   const [activeMode, setActiveMode] = useState<'upload' | 'download' | 'history'>('upload');
 

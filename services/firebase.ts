@@ -35,12 +35,12 @@ try {
 }
 
 // Ensure exports are never null for TypeScript compatibility
-export const getDb = () => {
+export const getDb = (): Database => {
   if (!dbInstance) throw new Error("Firebase Database not initialized");
   return dbInstance;
 };
 
-export const getStorageInstance = () => {
+export const getStorageInstance = (): FirebaseStorage => {
   if (!storageInstance) throw new Error("Firebase Storage not initialized");
   return storageInstance;
 };
