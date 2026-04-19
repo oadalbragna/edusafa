@@ -47,7 +47,7 @@ export const getStorageInstance = (): FirebaseStorage => {
 
 // Legacy exports (use carefully)
 export { app, analytics };
-export const db = dbInstance as Database;
+export const db = () => dbInstance as Database;
 export const storage = storageInstance as FirebaseStorage;
 
 export const isFirebaseReady = (): boolean => app !== null && dbInstance !== null;
