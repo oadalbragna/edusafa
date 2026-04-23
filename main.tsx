@@ -3,6 +3,33 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
+// Force clear all caches and service workers on load
+const clearAllCaches = async () => {
+  try {
+    // Unregister all service workers
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        console.log('[CacheFix] Service Worker unregistered');
+      }
+    }
+    // Delete all cache storage
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      for (const name of cacheNames) {
+        await caches.delete(name);
+        console.log('[CacheFix] Cache deleted:', name);
+      }
+    }
+  } catch (err) {
+    console.error('[CacheFix] Error clearing caches:', err);
+  }
+};
+
+// Execute cache clearing immediately
+clearAllCaches();
+
 // Global error handler
 window.onerror = function(message, source, lineno, colno, error) {
   // Prevent crash from undefined firebaseDb
