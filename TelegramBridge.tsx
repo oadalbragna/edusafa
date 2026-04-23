@@ -8,7 +8,7 @@ import {
   Zap
 } from 'lucide-react';
 import { ref, get, update, push, serverTimestamp, set } from 'firebase/database';
-import { getDb } from './services/firebase';
+import { db } from './services/firebase';
 
 import { SYS } from './constants/dbPaths';
 
@@ -29,7 +29,6 @@ interface UploadHistory {
 type StorageCategory = 'lectures' | 'recordings' | 'private_chats' | 'group_chats' | 'replies' | 'assignments' | 'general';
 
 const TelegramBridge: React.FC<TelegramBridgeProps> = ({ onBack }) => {
-  const db = db;
   const [loading, setLoading] = useState(false);
   const [activeMode, setActiveMode] = useState<'upload' | 'download' | 'history'>('upload');
 

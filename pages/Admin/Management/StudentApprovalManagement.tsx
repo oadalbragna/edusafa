@@ -14,7 +14,7 @@ import {
   AlertCircle,
   Filter
 } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
+import { db } from '../../../services/firebase';
 import { ref, onValue, update, push, set, serverTimestamp } from 'firebase/database';
 import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import type { UserProfile } from '../../../types';
@@ -354,7 +354,7 @@ const StudentApprovalManagement: React.FC = () => {
                         <button
                           onClick={() => {setSelectedStudent(student); setIsApproveModalOpen(true);}}
                           className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all hover:scale-110"
-                          title="قبول"
+                          title="قبول وتفعيل"
                         >
                           <UserCheck size={20} />
                         </button>
@@ -366,8 +366,39 @@ const StudentApprovalManagement: React.FC = () => {
                           <UserX size={20} />
                         </button>
                       </>
+                    ) : student.status === 'approved' ? (
+                      <>
+                        <button
+                          onClick={async () => {
+                            if(confirm(`هل أنت متأكد من إلغاء تفعيل حساب ${student.fullName || student.firstName}؟ سيعود لصفحة الانتظار.`)) {
+                              await update(ref(db, SYS.user(student.uid)), { status: 'pending', deactivatedAt: new Date().toISOString() });
+                            }
+                          }}
+                          className="p-2 text-amber-600 hover:bg-amber-50 rounded-xl transition-all hover:scale-110"
+                          title="إلغاء تفعيل (إعادة للانتظار)"
+                        >
+                          <Clock size={20} />
+                        </button>
+                        <button
+                          onClick={() => {setSelectedStudent(student); setIsRejectModalOpen(true);}}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all hover:scale-110"
+                          title="حظر/رفض"
+                        >
+                          <UserX size={20} />
+                        </button>
+                      </>
                     ) : (
-                      <span className="text-slate-300 text-xs font-bold">تمت المراجعة</span>
+                      <button
+                        onClick={async () => {
+                          if(confirm(`هل تريد إعادة تفعيل حساب ${student.fullName || student.firstName}؟`)) {
+                            await update(ref(db, SYS.user(student.uid)), { status: 'pending' });
+                          }
+                        }}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all hover:scale-110"
+                        title="إعادة للمراجعة"
+                      >
+                        <RefreshCw size={20} />
+                      </button>
                     )}
                   </div>
                 </td>

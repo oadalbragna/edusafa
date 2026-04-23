@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/common/ToastProvider';
 import {
   BookOpen, Video, Trophy, Calendar, MessageCircle, Bell,
   ChevronLeft, Loader2, Home, User, Settings, Moon, Sun,
@@ -15,7 +16,7 @@ import {
   RefreshCw, Check, AlertCircle, ExternalLink, Users, Link,
   Copy, QrCode, GraduationCap
 } from 'lucide-react';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, get, onValue, query, orderByChild, limitToLast, update } from 'firebase/database';
 import { SYS, EDU } from '../../constants/dbPaths';
 import type { SliderItem } from '../../types';
@@ -24,6 +25,7 @@ import { getStudentParentRequests, studentRespondToRequest, studentReviewProofDo
 import type { ParentLinkRequest } from '../../types';
 import ProofDocumentViewer from '../../components/parent/ProofDocumentViewer';
 import QRCodeDisplay from '../../components/parent/QRCodeDisplay';
+import CacheControl from '../../components/common/CacheControl';
 
 // For COMM (chats), we'll use a direct path
 const COMM = { CHATS: 'comm/chats' };
@@ -35,6 +37,7 @@ type SettingsTab = 'profile' | 'security' | 'notifications' | 'parentLinking';
 const StudentSmartHome: React.FC = () => {
   const navigate = useNavigate();
   const { profile, logout } = useAuth();
+  const { showInfo } = useToast();
 
   // Theme & UI State
   const [darkMode, setDarkMode] = useState(() => {
@@ -728,6 +731,9 @@ const StudentSmartHome: React.FC = () => {
                 <input type="text" placeholder="ابحث عن درس، مادة..." className={`bg-transparent border-none outline-none text-sm w-48 ${darkMode ? 'text-white placeholder-slate-500' : 'text-slate-700 placeholder-slate-400'}`} /></div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Cache Control */}
+              <CacheControl />
+              
               <button onClick={handleRefresh} disabled={refreshing} className={`p-2 rounded-xl ${darkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'} transition-colors ${refreshing ? 'animate-spin' : ''}`}>
                 <RefreshCw size={20} className={darkMode ? 'text-white' : 'text-slate-600'} /></button>
               <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-xl ${darkMode ? 'bg-slate-800 text-yellow-400' : 'bg-slate-100 text-slate-600'} transition-all`}>

@@ -9,7 +9,7 @@ import {
   Clock,
   ArrowRight
 } from 'lucide-react';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { SYS } from '../../constants/dbPaths';
 

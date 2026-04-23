@@ -33,11 +33,12 @@ import {
 } from 'lucide-react';
 
 import { ref, onValue, query, limitToLast } from 'firebase/database';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { SYS } from '../../constants/dbPaths';
 import { cn } from '../../utils/cn';
 import BottomDialog from '../common/BottomDialog';
 import { useBranding } from '../../context/BrandingContext';
+import CacheControl from '../common/CacheControl';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile, loading, logout } = useAuth();
@@ -268,6 +269,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
              </div>
 
              <div className="flex items-center gap-3 md:gap-6 shrink-0 relative">
+               {/* Cache Control (Enable/Disable/Clear) */}
+               <CacheControl />
+
                {/* Theme Toggle Button */}
                <button
                  onClick={toggleTheme}

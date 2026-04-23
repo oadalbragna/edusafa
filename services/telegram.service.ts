@@ -1,5 +1,5 @@
 import { ref, update, serverTimestamp, get, remove } from 'firebase/database';
-import { getDb as db } from './firebase';
+import { db } from './firebase';
 import { SYS, EDU, COMM } from '../constants/dbPaths';
 
 // ============================================================================

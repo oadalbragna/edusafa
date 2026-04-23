@@ -23,6 +23,7 @@ export interface Toast {
 
 interface ToastContextType {
   showToast: (toast: Omit<Toast, 'id'>) => void;
+  addToast: (message: string, type?: ToastType) => void; // Added for compatibility
   showSuccess: (title: string, message?: string) => void;
   showError: (title: string, message?: string) => void;
   showInfo: (title: string, message?: string) => void;
@@ -78,6 +79,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts([]);
   }, []);
 
+  const addToast = useCallback((message: string, type: ToastType = 'info') => {
+    showToast({ type, title: message });
+  }, [showToast]);
+
   const showSuccess = useCallback((title: string, message?: string) => {
     showToast({ type: 'success', title, message });
   }, [showToast]);
@@ -97,6 +102,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{
       showToast,
+      addToast,
       showSuccess,
       showError,
       showInfo,

@@ -16,7 +16,7 @@ import {
   FileText, Type, List, CheckSquare, AlignLeft, Image, Link,
   Settings, Timer, Award, Target, BookOpen, HelpCircle
 } from 'lucide-react';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, get, set, push, update } from 'firebase/database';
 import { EDU } from '../../constants/dbPaths';
 import { sanitizeHTML } from '../../utils/security';

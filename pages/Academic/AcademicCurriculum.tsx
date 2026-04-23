@@ -23,7 +23,7 @@ import {
   ShieldCheck,
   Save
 } from 'lucide-react';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { TelegramService } from '../../services/telegram.service';
 import { ref, onValue, push, set, remove, update } from 'firebase/database';

@@ -126,11 +126,20 @@ export const EDU = {
 
     material: (classId: string, subjectId: string, type: string) =>
       `${DB_ROOT.EDU}/sch/classes/${classId}/subjects/${subjectId}/materials/${type}`,
+    
+    // NEW: Class-level data
+    classMaterials: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/materials`,
+    classTimetable: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/timetable`,
+    classBehaviors: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/behaviors`,
   },
 
   // Courses & Subjects (Global - for reference only, not for class-specific content)
   COURSES: `${DB_ROOT.EDU}/courses`,
   course: (courseId: string) => `${DB_ROOT.EDU}/courses/${courseId}`,
+
+  // NEW: Behaviors (Global behaviors)
+  BEHAVIORS: `${DB_ROOT.EDU}/behaviors`,
+  studentBehaviors: (studentId: string) => `${DB_ROOT.EDU}/behaviors/${studentId}`,
 
   // NEW: Lessons (Global lessons)
   LESSONS: `${DB_ROOT.EDU}/lessons`,
@@ -138,6 +147,7 @@ export const EDU = {
 
   // NEW: Timetable (Global timetable)
   TIMETABLE: `${DB_ROOT.EDU}/timetable`,
+  TIMETABLE_SETTINGS: `${DB_ROOT.EDU}/timetable_settings`,
   timetableClass: (classId: string) => `${DB_ROOT.EDU}/timetable/${classId}`,
 
   // NEW: Grades (Global grades structure)

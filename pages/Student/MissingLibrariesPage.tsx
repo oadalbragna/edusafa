@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { SYS, EDU } from '../../constants/dbPaths';
 import {

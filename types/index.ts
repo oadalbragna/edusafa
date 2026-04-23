@@ -76,6 +76,7 @@ export interface UserProfile {
     status: 'active' | 'used' | 'expired';
   }>;
   studentLink?: string;     // For parent: links to student UID
+  studentLinks?: string[];   // For parent: array of student UIDs linked (new system)
   parentLinks?: string[];   // For student: array of parent UIDs linked
   parentUid?: string;       // Legacy: single parent UID on student
   parentEmail?: string;     // Legacy: single parent email on student

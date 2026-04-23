@@ -45,7 +45,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['IBM Plex Sans Arabic', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Thmanyah Serif Display', 'IBM Plex Sans Arabic', 'Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

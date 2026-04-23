@@ -72,19 +72,21 @@ const App: React.FC = () => {
 
   if (showSplash) {
     return (
-      <BrandingProvider>
-        <UnifiedSplash onComplete={() => setShowSplash(false)} />
-      </BrandingProvider>
+      <ThemeProvider>
+        <BrandingProvider>
+          <UnifiedSplash onComplete={() => setShowSplash(false)} />
+        </BrandingProvider>
+      </ThemeProvider>
     );
   }
 
   return (
-    <RouteErrorBoundary>
-      <ThemeProvider>
-        <ToastProvider>
-          <BrandingProvider>
-            <AuthProvider>
-              <Router>
+    <ThemeProvider>
+      <ToastProvider>
+        <BrandingProvider>
+          <AuthProvider>
+            <Router>
+              <RouteErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
                     {/* Public Routes - No Layout */}
@@ -430,12 +432,12 @@ const App: React.FC = () => {
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
-              </Router>
-            </AuthProvider>
-          </BrandingProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </RouteErrorBoundary>
+              </RouteErrorBoundary>
+            </Router>
+          </AuthProvider>
+        </BrandingProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 };
 

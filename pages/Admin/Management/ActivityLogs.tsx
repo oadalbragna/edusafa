@@ -14,8 +14,8 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
-import { SYS, EDU, COMM } from '../../constants/dbPaths';
+import { db } from '../../../services/firebase';
+import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import { ref, onValue, remove, query, limitToLast } from 'firebase/database';
 
 const ActivityLogs: React.FC = () => {

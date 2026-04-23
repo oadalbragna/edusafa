@@ -14,8 +14,8 @@ import {
   Shield,
   XCircle
 } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
-import { SYS, EDU, COMM } from '../../constants/dbPaths';
+import { db } from '../../../services/firebase';
+import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import { ref, onValue, remove, update } from 'firebase/database';
 
 import type { UserProfile, UserRole, UserPermissions, Class, Subject } from '../../../types';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, BookOpen, Mail, ShieldCheck, Loader2, CheckCircle2, Lock, School, X, Plus } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
+import { db } from '../../../services/firebase';
 import { ref, push, set, get } from 'firebase/database';
 import { SYS, EDU } from '../../../constants/dbPaths';
 import { logActivity } from '../../../utils/activityLogger';

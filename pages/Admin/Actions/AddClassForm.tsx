@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LayoutGrid, Loader2, CheckCircle2, UploadCloud, ImageIcon, Film } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
+import { db } from '../../../services/firebase';
 import { TelegramService } from '../../../services/telegram.service';
 import { ref, push, set } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';

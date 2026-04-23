@@ -5,7 +5,7 @@
  */
 
 import { ref, get, set, serverTimestamp, update, onDisconnect, query, orderByChild, equalTo } from 'firebase/database';
-import { getDb as db } from './firebase';
+import { db } from './firebase';
 import { SYS } from '../constants/dbPaths';
 import type { UserProfile } from '../types';
 import { hashPassword, verifyPassword, validatePasswordStrength, validateEmail, sanitizeHTML } from '../utils/security';

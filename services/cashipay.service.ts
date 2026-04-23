@@ -1,7 +1,7 @@
 /**
  * Cashipay Core Service - Fully Mapped to amolood/cashipay-laravel logic
  */
-import { getDb as db } from './firebase';
+import { db } from './firebase';
 import { ref, push, set } from 'firebase/database';
 import { SYS } from '../constants/dbPaths';
 

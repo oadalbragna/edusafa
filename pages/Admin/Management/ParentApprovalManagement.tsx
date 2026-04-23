@@ -16,7 +16,7 @@ import { useToast } from '../../../components/common/ToastProvider';
 import { ParentLinkService, ParentLinkRequest } from '../../../services/api/ParentLinkService';
 import ProofDocumentViewer from '../../../components/parent/ProofDocumentViewer';
 import { ref, get, update } from 'firebase/database';
-import { getDb as db } from '../../../services/firebase';
+import { db } from '../../../services/firebase';
 import { SYS } from '../../../constants/dbPaths';
 
 const ParentApprovalManagement: React.FC = () => {

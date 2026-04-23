@@ -21,7 +21,7 @@ import AddStudentForm from '../Admin/Actions/AddStudentForm';
 import AddTeacherForm from '../Admin/Actions/AddTeacherForm';
 import AddReportForm from '../Admin/Actions/AddReportForm';
 import AddClassForm from '../Admin/Actions/AddClassForm';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { useAuth } from '../../context/AuthContext';
@@ -78,9 +78,11 @@ const Dashboard: React.FC = () => {
         // Fetch from all three main branches
         const sysRef = ref(db, SYS.USERS);
         const eduRef = ref(db, EDU.SCH.CLASSES);
+        const actRef = ref(db, SYS.MAINTENANCE.ACTIVITIES);
         
         const sysSnap = await get(sysRef);
         const eduSnap = await get(eduRef);
+        const actSnap = await get(actRef);
         
         if (sysSnap.exists()) {
           const users = Object.values(sysSnap.val());
@@ -95,8 +97,8 @@ const Dashboard: React.FC = () => {
             classes: classesCount
           });
 
-          if (data.activities) {
-            const acts = Object.values(data.activities);
+          if (actSnap.exists()) {
+            const acts = Object.values(actSnap.val());
             // Filter activities based on role if needed
             const filteredActs = isAdmin 
               ? acts 

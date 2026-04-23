@@ -39,12 +39,10 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     try {
       await navigator.clipboard.writeText(inviteCode);
       setCopied(true);
-      if (toast.showSuccess) toast.showSuccess('تم نسخ الكود بنجاح');
-      else if (toast.addToast) toast.addToast('تم نسخ الكود بنجاح', 'success');
+      toast.showSuccess('تم نسخ الكود بنجاح');
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      if (toast.showError) toast.showError('فشل نسخ الكود');
-      else if (toast.addToast) toast.addToast('فشل نسخ الكود', 'error');
+      toast.showError('فشل نسخ الكود');
     }
   };
 
@@ -57,9 +55,9 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     setGenerating(true);
     try {
       await onGenerateNew();
-      addToast('تم إنشاء كود جديد بنجاح', 'success');
+      toast.showSuccess('تم إنشاء كود جديد بنجاح');
     } catch (error: any) {
-      addToast(error.message || 'فشل إنشاء كود جديد', 'error');
+      toast.showError(error.message || 'فشل إنشاء كود جديد');
     } finally {
       setGenerating(false);
     }

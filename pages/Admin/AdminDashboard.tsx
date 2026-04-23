@@ -23,7 +23,7 @@ import {
   UploadCloud
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';

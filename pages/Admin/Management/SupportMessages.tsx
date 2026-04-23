@@ -17,8 +17,8 @@ import {
   ShieldAlert,
   Tag
 } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
-import { SYS, EDU, COMM } from '../../constants/dbPaths';
+import { db } from '../../../services/firebase';
+import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import { ref, onValue, update, remove } from 'firebase/database';
 
 const SupportMessages: React.FC = () => {

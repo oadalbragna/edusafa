@@ -7,7 +7,7 @@ import {
   ZoomIn, ZoomOut, RotateCw, Move, Save, Copy, Grid, Minimize2, Trash2, Bug, Loader2, ClipboardList, Calendar
 } from 'lucide-react';
 import { ref, onValue, push, set, remove, serverTimestamp, runTransaction, get } from 'firebase/database';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { useTheme } from '../../context/ThemeContext';
 // TODO: Create these components if they don't exist
 // import ReportDialog, { ReportType } from '../../components/common/ReportDialog';

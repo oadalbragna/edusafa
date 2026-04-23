@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { SYS, EDU, COMM } from '../../constants/dbPaths';
 import { TelegramService } from '../../services/telegram.service';
 import { ref, push, set, onValue, serverTimestamp, query, limitToLast, get, remove, update } from 'firebase/database';
@@ -39,7 +39,7 @@ import type { Message } from '../../types';
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { showError } = useToast();
+  const { showSuccess, showError, showInfo } = useToast();
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');

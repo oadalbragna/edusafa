@@ -6,7 +6,7 @@
  */
 
 import { ref, get, set, update, push, onValue } from 'firebase/database';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { SYS } from '../../constants/dbPaths';
 
 // ============================================================================

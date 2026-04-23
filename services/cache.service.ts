@@ -21,6 +21,7 @@ class DataCache {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private config: CacheConfig;
   private cleanupTimer?: NodeJS.Timeout;
+  private isEnabled: boolean = true;
 
   constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
@@ -29,13 +30,37 @@ class DataCache {
       cleanupInterval: config.cleanupInterval ?? 60 * 1000 // Cleanup every minute
     };
 
+    // Load initial state from localStorage
+    const savedState = localStorage.getItem('edu_cache_enabled');
+    this.isEnabled = savedState !== null ? JSON.parse(savedState) : true;
+
     this.startCleanupTimer();
+  }
+
+  /**
+   * Toggle cache state
+   */
+  setEnabled(enabled: boolean): void {
+    this.isEnabled = enabled;
+    localStorage.setItem('edu_cache_enabled', JSON.stringify(enabled));
+    if (!enabled) {
+      this.clear();
+    }
+  }
+
+  /**
+   * Check if cache is enabled
+   */
+  getEnabled(): boolean {
+    return this.isEnabled;
   }
 
   /**
    * Get data from cache
    */
   get<T>(key: string): T | null {
+    if (!this.isEnabled) return null;
+    
     const entry = this.cache.get(key);
     
     if (!entry) {
@@ -55,6 +80,8 @@ class DataCache {
    * Set data in cache
    */
   set<T>(key: string, data: T, ttl?: number): void {
+    if (!this.isEnabled) return;
+
     // Remove oldest entry if at capacity
     if (this.cache.size >= this.config.maxSize) {
       const oldestKey = this.cache.keys().next().value;

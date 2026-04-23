@@ -1,5 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&display=swap');
 
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('./assets/fonts/thmanyahserifdisplay-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('./assets/fonts/thmanyahserifdisplay-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('./assets/fonts/thmanyahserifdisplay-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('./assets/fonts/thmanyahserifdisplay-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('./assets/fonts/thmanyahserifdisplay-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,7 +43,7 @@
    LIGHT MODE (الوضع الفاتح)
    ============================================================================ */
 :root {
-  font-family: 'IBM Plex Sans Arabic', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Thmanyah Serif Display', 'IBM Plex Sans Arabic', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
@@ -291,4 +326,3 @@ html.dark .shadow-lg {
 html.dark .shadow-xl {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
 }
-

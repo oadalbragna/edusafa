@@ -137,7 +137,7 @@ export const AdminRoute: React.FC<{ children: React.ReactNode; allowSupervisors?
  */
 export const TeacherRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <ProtectedRoute allowedRoles={['teacher']} requireApproval={false}>
+    <ProtectedRoute allowedRoles={['teacher']} requireApproval={true}>
       {children}
     </ProtectedRoute>
   );
@@ -148,7 +148,7 @@ export const TeacherRoute: React.FC<{ children: React.ReactNode }> = ({ children
  */
 export const StudentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <ProtectedRoute allowedRoles={['student']} requireApproval={false}>
+    <ProtectedRoute allowedRoles={['student']} requireApproval={true}>
       {children}
     </ProtectedRoute>
   );
@@ -159,7 +159,7 @@ export const StudentRoute: React.FC<{ children: React.ReactNode }> = ({ children
  */
 export const ParentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <ProtectedRoute allowedRoles={['parent']} requireApproval={false}>
+    <ProtectedRoute allowedRoles={['parent']} requireApproval={true}>
       {children}
     </ProtectedRoute>
   );

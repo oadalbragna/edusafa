@@ -27,7 +27,7 @@ import { useRegister } from '../../hooks/useRegister';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { AuthInput } from '../../components/auth/AuthInput';
 import { RoleSelector } from '../../components/auth/RoleSelector';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { ref, get } from 'firebase/database';
 import { EDU } from '../../constants/dbPaths';
 

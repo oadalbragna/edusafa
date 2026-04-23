@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ref, get, query, orderByChild, equalTo, onValue } from 'firebase/database';
-import { getDb as db } from '../../services/firebase';
+import { db } from '../../services/firebase';
 import { SYS, EDU } from '../../constants/dbPaths';
 import type { UserProfile } from '../../types';
 
@@ -78,7 +78,7 @@ const ParentDashboard: React.FC = () => {
             const student: StudentData = {
               uid,
               fullName: data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'طالب',
-              className: data.className || data.grade || '',
+              className: data.classId || data.grade || '',
               eduLevel: data.eduLevel,
               grade: data.grade,
               status: data.status,

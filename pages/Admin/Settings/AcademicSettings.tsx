@@ -14,8 +14,8 @@ import {
   Settings as SettingsIcon,
   Globe
 } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
-import { SYS, EDU, COMM } from '../../constants/dbPaths';
+import { db } from '../../../services/firebase';
+import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import { ref, onValue, set, update } from 'firebase/database';
 
 const AcademicSettings: React.FC = () => {

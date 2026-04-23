@@ -4,7 +4,7 @@
  * Allows parents to upload guardian proof documents after student approval
  */
 
-import React, { useState, useRef } from 'react';
+import * as React from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { uploadProofDocument, getProofDocumentTypeLabel } from '../../services/documentUpload.service';
 import type { ProofDocumentType } from '../../services/documentUpload.service';
@@ -26,13 +26,13 @@ const ProofDocumentUpload: React.FC<ProofDocumentUploadProps> = ({
   onCancel
 }) => {
   const { showSuccess, showError } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<ProofDocumentType>('id_card');
-  const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [dragOver, setDragOver] = useState(false);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [documentType, setDocumentType] = React.useState<ProofDocumentType>('id_card');
+  const [uploading, setUploading] = React.useState(false);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [dragOver, setDragOver] = React.useState(false);
 
   // Handle file selection
   const handleFileSelect = (file: File | null) => {

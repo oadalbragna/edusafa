@@ -1,11 +1,7 @@
-/**
- * EduSafa Learning - Firebase Configuration
- */
-
-import { initializeApp, FirebaseApp } from "firebase/app";
-import { getAnalytics, Analytics } from "firebase/analytics";
-import { getDatabase, Database } from "firebase/database";
-import { getStorage, FirebaseStorage } from "firebase/storage";
+import { initializeApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
+import { getStorage } from "firebase/storage";
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,36 +14,7 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-let app: FirebaseApp | null = null;
-let dbInstance: Database | null = null;
-let storageInstance: FirebaseStorage | null = null;
-let analytics: Analytics | null = null;
-
-try {
-  app = initializeApp(firebaseConfig);
-  dbInstance = getDatabase(app);
-  storageInstance = getStorage(app);
-  if (typeof window !== 'undefined') {
-    analytics = getAnalytics(app);
-  }
-} catch (error) {
-  console.error('Firebase initialization error:', error);
-}
-
-// Ensure exports are never null for TypeScript compatibility
-export const getDb = (): Database => {
-  if (!dbInstance) throw new Error("Firebase Database not initialized");
-  return dbInstance;
-};
-
-export const getStorageInstance = (): FirebaseStorage => {
-  if (!storageInstance) throw new Error("Firebase Storage not initialized");
-  return storageInstance;
-};
-
-// Legacy exports (use carefully)
-export { app, analytics };
-export const db = () => dbInstance as Database;
-export const storage = storageInstance as FirebaseStorage;
-
-export const isFirebaseReady = (): boolean => app !== null && dbInstance !== null;
+const app = initializeApp(firebaseConfig);
+export const db = getDatabase(app);
+export const storage = getStorage(app);
+export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;

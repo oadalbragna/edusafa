@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Phone, Mail, GraduationCap, Loader2, CheckCircle2, Lock, School } from 'lucide-react';
-import { getDb as db } from '../../../services/firebase';
+import { db } from '../../../services/firebase';
 import { ref, push, set, get } from 'firebase/database';
 import { logActivity } from '../../../utils/activityLogger';
 import { useAuth } from '../../../context/AuthContext';
+import { SYS } from '../../../constants/dbPaths';
 
 const AddStudentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const { profile } = useAuth();

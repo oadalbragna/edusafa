@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ref, onValue } from 'firebase/database';
-import { getDb as db } from '../services/firebase';
+import { ref, onValue, get } from 'firebase/database';
+import { db } from '../services/firebase';
 import { SYS } from '../constants/dbPaths';
 
 interface Branding {
@@ -51,7 +51,8 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Set a timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       setLoading(false);
-    }, 2000); // Max 2 seconds wait
+      console.log('⏱️ Branding load timeout - using defaults');
+    }, 1500); // Reduced to 1.5 seconds
 
     if (!db) {
       console.warn('⚠️ DB not available - using default branding');
@@ -61,6 +62,21 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const brandingRef = ref(db, SYS.SYSTEM.BRANDING);
+    // Use get() first for immediate data, then onValue for updates
+    get(brandingRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const merged = { ...defaultBranding, ...snapshot.val() };
+        setBranding(merged);
+        localStorage.setItem('edu_branding', JSON.stringify(merged));
+      }
+      setLoading(false);
+      clearTimeout(timeoutId);
+    }).catch(err => {
+      console.error('Branding initial fetch error:', err);
+      setLoading(false);
+      clearTimeout(timeoutId);
+    });
+
     const unsubscribe = onValue(brandingRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
