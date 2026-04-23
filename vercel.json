@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/media",
+      "destination": "/api/server.ts"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/server.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
