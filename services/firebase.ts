@@ -14,6 +14,11 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Validate config
+if (!firebaseConfig.projectId || !firebaseConfig.databaseURL) {
+  console.error("❌ Firebase Configuration is missing! Make sure to set VITE_FIREBASE_PROJECT_ID and VITE_FIREBASE_DATABASE_URL in your Environment Variables.");
+}
+
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 export const storage = getStorage(app);
