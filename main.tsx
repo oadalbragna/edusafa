@@ -3,19 +3,6 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Register service worker for offline support and faster loads
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('[SW] Service Worker registered:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('[SW] Service Worker registration failed:', error);
-      });
-  });
-}
-
 // Global error handler
 window.onerror = function(message, source, lineno, colno, error) {
   // Prevent crash from undefined firebaseDb
