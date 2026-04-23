@@ -4,20 +4,15 @@ import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyAiNEWKhQQsJsWjrmTziiwA83pmKz_jBV4",
+  authDomain: "mas-tech-123.firebaseapp.com",
+  databaseURL: "https://mas-tech-123-default-rtdb.firebaseio.com",
+  projectId: "mas-tech-123",
+  storageBucket: "mas-tech-123.firebasestorage.app",
+  messagingSenderId: "882849023773",
+  appId: "1:882849023773:web:27ff72c0edb053959103f4",
+  measurementId: "G-DK9N23NS33"
 };
-
-// Validate config
-if (!firebaseConfig.projectId || !firebaseConfig.databaseURL) {
-  console.error("❌ Firebase Configuration is missing! Make sure to set VITE_FIREBASE_PROJECT_ID and VITE_FIREBASE_DATABASE_URL in your Environment Variables.");
-}
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
