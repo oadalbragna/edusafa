@@ -81,19 +81,6 @@ const GlobalSubjects: React.FC = () => {
     }
   };
 
-        isCertified: !currentStatus
-      });
-    } catch (err) {
-      alert('حدث خطأ أثناء التحديث');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('هل تريد حذف هذه المادة؟')) {
-      await remove(ref(db, `edu/courses/${id}`));
-    }
-  };
-
   const toggleStatus = async (subject: any) => {
     const nextStatus = subject.status === 'hidden' ? 'public' : 'hidden';
     await update(ref(db, `edu/courses/${subject.id}`), { status: nextStatus });
