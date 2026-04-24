@@ -306,9 +306,9 @@ const TeacherDashboard: React.FC = () => {
 
         // Fetch My Requests
         const reqsRef = ref(db, 'sys/config/teacher_class_requests');
-        const reqSnap = await get(reqsRef);
-        if (reqSnap.exists()) {
-          const allReqs = Object.values(reqSnap.val());
+        const requestsSnapshot = await get(reqsRef);
+        if (requestsSnapshot.exists()) {
+          const allReqs = Object.values(requestsSnapshot.val());
           const filteredReqs = allReqs.filter((r: any) => r.teacherId === profile.uid).map((r: any) => {
             const cls = classesData[r.classId];
             return { ...r, className: cls?.name || 'فصل غير معروف', level: cls?.level, grade: cls?.grade };
