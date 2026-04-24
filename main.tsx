@@ -85,6 +85,12 @@ console.error = function(...args) {
   originalConsoleError.apply(console, args);
 };
 
+import { GlobalErrorBoundary } from './components/common/GlobalErrorBoundary'
+
+// ... existing setup logic
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <App />
+  <GlobalErrorBoundary>
+    <App />
+  </GlobalErrorBoundary>
 )

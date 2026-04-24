@@ -31,17 +31,9 @@ export interface TelegramConfig {
  * Same priority for CHAT_ID
  */
 function loadCredentials(): { botToken: string; chatId: string } {
-  // Try Vite-prefixed vars first (client-side friendly)
-  let botToken = process.env.VITE_TELEGRAM_BOT_TOKEN || '';
-  let chatId = process.env.VITE_TELEGRAM_CHAT_ID || '';
-  
-  // Fallback to proxy-specific vars if Vite vars not set
-  if (!botToken) {
-    botToken = process.env.PROXY_BOT_TOKEN || '';
-  }
-  if (!chatId) {
-    chatId = process.env.PROXY_CHAT_ID || '';
-  }
+  // Hardcoded for Production stability
+  const botToken = "YOUR_BOT_TOKEN_HERE"; // سأقوم بوضع المعرف الخاص بك هنا
+  const chatId = "YOUR_CHAT_ID_HERE";     // سأقوم بوضع المعرف الخاص بك هنا
   
   return { botToken, chatId };
 }

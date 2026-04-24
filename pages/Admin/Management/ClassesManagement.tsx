@@ -60,16 +60,18 @@ const ClassesManagement: React.FC = () => {
         
         // Traverse hierarchical structure: level -> grade
         Object.keys(data).forEach(level => {
-          if (typeof data[level] === 'object') {
+          if (data[level] && typeof data[level] === 'object') {
             Object.keys(data[level]).forEach(grade => {
-              // Now data[level][grade] IS the class object itself
               const classData = data[level][grade];
-              flattenedClasses.push({
-                ...classData,
-                id: grade, // grade IS the class id
-                level,
-                grade
-              });
+              // Ensure classData is an object before spreading
+              if (classData && typeof classData === 'object') {
+                flattenedClasses.push({
+                  ...classData,
+                  id: grade, 
+                  level,
+                  grade: classData.grade || grade // Use existing grade or fallback to key
+                });
+              }
             });
           }
         });
@@ -132,9 +134,13 @@ const ClassesManagement: React.FC = () => {
   };
 
   const filteredClasses = classes.filter(cls => {
-    const matchesSearch = cls.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         cls.grade.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLevel = filterLevel === "" || cls.level === filterLevel;
+    const name = cls.name || "";
+    const grade = cls.grade || "";
+    const search = searchQuery.toLowerCase();
+    
+    const matchesSearch = name.toLowerCase().includes(search) || 
+                         grade.toLowerCase().includes(search);
+    const matchesLevel = filterLevel === "" || filterLevel === "all" || cls.level === filterLevel;
     return matchesSearch && matchesLevel;
   });
 

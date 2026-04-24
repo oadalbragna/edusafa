@@ -78,31 +78,36 @@ export class MediaHandler {
         });
       }
 
-      // Parse URL and extract file_id
+      // Parse URL and extract file_id (shortId)
       const url = new URL(request.url);
-      const fileId = url.searchParams.get('f') || url.searchParams.get('file') || url.searchParams.get('file_id');
+      const shortId = url.searchParams.get('f') || url.searchParams.get('file') || url.searchParams.get('file_id');
       
-      if (!fileId) {
+      if (!shortId) {
         logger.warn('Missing file_id parameter', { url: request.url });
-        return new Response('Missing file_id parameter. Use ?f=<file_id>', {
-          status: 400,
-          headers: { 'Content-Type': 'text/plain' }
-        });
+        return new Response('Missing file_id parameter.', { status: 400 });
+      }
+
+      // PRODUCTION FIX: If the shortId isn't a direct Telegram file_id,
+      // try to resolve it from Firebase safe_links meta-data first.
+      let finalFileId = shortId;
+      if (shortId.startsWith('f_')) {
+        const resolvedId = await this.resolveShortIdFromFirebase(shortId);
+        if (resolvedId) {
+          finalFileId = resolvedId;
+          logger.info('Resolved shortId to tele_file_id', { shortId, finalFileId });
+        }
       }
 
       // Validate file_id
-      if (!TelegramService.isValidFileId(fileId)) {
-        logger.warn('Invalid file_id format', { fileId });
-        return new Response('Invalid file_id format', {
-          status: 400,
-          headers: { 'Content-Type': 'text/plain' }
-        });
+      if (!TelegramService.isValidFileId(finalFileId)) {
+        logger.warn('Invalid file_id format', { finalFileId });
+        return new Response('Invalid file_id format', { status: 400 });
       }
 
-      logger.info('Media request', { fileId, ip: clientIp, userAgent: request.headers.get('user-agent') });
+      logger.info('Media request', { fileId: finalFileId, ip: clientIp });
 
       // Get file stream from Telegram
-      const { stream, contentType, contentLength, status, headers: telegramHeaders } = await this.telegramService.streamFile(fileId, request.headers);
+      const { stream, contentType, contentLength, status, headers: telegramHeaders } = await this.telegramService.streamFile(finalFileId, request.headers);
 
       // Determine content type from file path or default to application/octet-stream
       const fileExt = fileId.split('.').pop()?.toLowerCase() || '';
@@ -178,8 +183,23 @@ export class MediaHandler {
   }
 
   /**
-   * Get proxy statistics
+   * Helper to resolve shortId to tele_file_id from Firebase
    */
+  private async resolveShortIdFromFirebase(shortId: string): Promise<string | null> {
+    try {
+      // Lazy initialize Firebase if needed (in a real project, use firebase-admin)
+      // Since this proxy runs on Node, we use firebase-admin or standard REST API
+      // Here we use REST API for portability in serverless environments
+      const FIREBASE_URL = 'https://edusafa-default-rtdb.firebaseio.com'; // Replace with actual URL
+      const response = await fetch(`${FIREBASE_URL}/sys/meta_data/safe_links/${shortId}.json`);
+      const data = await response.json();
+      
+      return data?.tele_file_id || null;
+    } catch (e) {
+      logger.error('Failed to resolve shortId from Firebase', { shortId, error: e.message });
+      return null;
+    }
+  }
   getStats() {
     return {
       cache: this.telegramService.getCacheStats(),
