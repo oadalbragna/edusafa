@@ -58,20 +58,18 @@ const ClassesManagement: React.FC = () => {
         const data = snapshot.val();
         const flattenedClasses: Class[] = [];
         
-        // Traverse hierarchical structure: level -> grade -> classId
+        // Traverse hierarchical structure: level -> grade
         Object.keys(data).forEach(level => {
-          if (typeof data[level] === 'object' && level !== 'students') { // Skip students mapping if present
+          if (typeof data[level] === 'object') {
             Object.keys(data[level]).forEach(grade => {
-              if (typeof data[level][grade] === 'object') {
-                Object.keys(data[level][grade]).forEach(classId => {
-                  flattenedClasses.push({
-                    ...data[level][grade][classId],
-                    id: classId,
-                    level, // Ensure level and grade are consistent
-                    grade
-                  });
-                });
-              }
+              // Now data[level][grade] IS the class object itself
+              const classData = data[level][grade];
+              flattenedClasses.push({
+                ...classData,
+                id: grade, // grade IS the class id
+                level,
+                grade
+              });
             });
           }
         });
@@ -105,7 +103,7 @@ const ClassesManagement: React.FC = () => {
     }
 
     try {
-      await remove(ref(db, `edu/sch/classes/${selectedClass.level}/${selectedClass.grade}/${id}`));
+      await remove(ref(db, `edu/sch/classes/${selectedClass.level}/${selectedClass.grade}`));
       setIsDeleteModalOpen(false);
     } catch (err) {
       alert('حدث خطأ أثناء حذف الفصل');
@@ -116,7 +114,7 @@ const ClassesManagement: React.FC = () => {
     e.preventDefault();
     if (!selectedClass) return;
     try {
-      await update(ref(db, `edu/sch/classes/${selectedClass.level}/${selectedClass.grade}/${selectedClass.id}`), editClass);
+      await update(ref(db, `edu/sch/classes/${selectedClass.level}/${selectedClass.grade}`), editClass);
       setIsEditModalOpen(false);
     } catch (err) {
       alert('حدث خطأ أثناء تحديث بيانات الفصل');
@@ -127,7 +125,7 @@ const ClassesManagement: React.FC = () => {
     const cls = classes.find(c => c.id === id);
     if (!cls) return;
     try {
-      await update(ref(db, `edu/sch/classes/${cls.level}/${cls.grade}/${id}`), { status });
+      await update(ref(db, `edu/sch/classes/${cls.level}/${cls.grade}`), { status });
     } catch (err) {
       alert('حدث خطأ أثناء تحديث حالة الفصل');
     }
