@@ -60,7 +60,7 @@ const AddStudentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       if (!cls) throw new Error('فصل دراسي غير صالح');
 
       // 1. Save to students database (inside specific class)
-      const studentRef = ref(db, `edu/sch/classes/students/${formData.classId}`);
+      const studentRef = ref(db, `edu/sch/classes/${cls.level}/${cls.grade}/students`);
       const newStudentRef = push(studentRef);
       const studentId = newStudentRef.key;
 
