@@ -1567,7 +1567,23 @@ const StudentSmartHome: React.FC = () => {
                         <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{parent.email}</p>
                         {parent.phone && <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{parent.phone}</p>}
                       </div>
-                      <CheckCircle size={18} className="text-emerald-500" />
+                      <button 
+                        onClick={async () => {
+                          if (window.confirm('هل أنت متأكد من إلغاء ربط ولي الأمر هذا؟ سيتم إخطار ولي الأمر بذلك.')) {
+                            const { removeParentLink } = await import('../../utils/parentLinkRequests');
+                            const result = await removeParentLink(profile!.uid, parent.uid);
+                            if (result.success) {
+                              window.location.reload(); // Simple refresh for now
+                            } else {
+                              alert(result.errorMessage);
+                            }
+                          }
+                        }}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        title="إلغاء الربط"
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
                   ))}
                 </div>
