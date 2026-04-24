@@ -273,7 +273,6 @@ const TeacherDashboard: React.FC = () => {
                   };
                   assigned.push(classData);
                 }
-              });
             });
           });
           setAssignedSubjects(assigned);
