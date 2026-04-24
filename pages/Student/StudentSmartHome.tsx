@@ -355,8 +355,8 @@ const StudentSmartHome: React.FC = () => {
         const lessonsSnap = await get(lessonsRef);
         const totalLessonsCount = lessonsSnap.exists() ? Object.keys(lessonsSnap.val()).length : 0;
         let pendingAssignmentsCount = 0;
-        if (currentClassId) {
-          const assignmentsRef = ref(db, `${EDU.ASSIGNMENTS}/${currentClassId}`);
+        if (profile?.eduLevel && profile?.grade) {
+          const assignmentsRef = ref(db, `edu/sch/classes/${profile.eduLevel}/${profile.grade}/assignments`);
           const assignSnap = await get(assignmentsRef);
           if (assignSnap.exists()) {
             const allAssignments = Object.values(assignSnap.val());
@@ -368,7 +368,7 @@ const StudentSmartHome: React.FC = () => {
         setStats(prev => ({
           ...prev, totalLessons: totalLessonsCount, attendanceRate: 95,
           overallProgress: Object.keys(grades).length > 0
-            ? Math.round(Object.values(grades).reduce((a: any, b: any) => a + b, 0) / Object.values(grades).length) : 0,
+            ? Math.round(Object.values(grades).reduce((a: any, b: any) => a + b, 0) / Object.keys(grades).length) : 0,
           pendingAssignments: pendingAssignmentsCount
         }));
       } catch (err) { console.error('Stats calculation error:', err); }
