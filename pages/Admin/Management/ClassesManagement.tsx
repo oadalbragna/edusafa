@@ -36,7 +36,7 @@ const ClassesManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterLevel, setFilterLevel] = useState('all');
+  const [filterLevel, setFilterLevel] = useState(""); const [filterGrade, setFilterGrade] = useState("");;
 
   // Modals state
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
@@ -134,7 +134,7 @@ const ClassesManagement: React.FC = () => {
   const filteredClasses = classes.filter(cls => {
     const matchesSearch = cls.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          cls.grade.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLevel = filterLevel === 'all' || cls.level === filterLevel;
+    const matchesLevel = filterLevel === "" || cls.level === filterLevel;
     return matchesSearch && matchesLevel;
   });
 
