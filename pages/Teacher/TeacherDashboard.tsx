@@ -320,10 +320,12 @@ const TeacherDashboard: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    };
-    fetchAssignedData();
-  }, [profile]);
+      };
 
+      fetchAssignedData();
+      };
+      init();
+      }, [profile]);
   useEffect(() => {
     const fetchMaterials = async () => {
       if (!selectedSubject) return;
