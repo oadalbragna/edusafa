@@ -263,20 +263,27 @@ const TeacherDashboard: React.FC = () => {
               });
             });
           });
-                  const classData = {
-                    classId: cls.id,
-                    className: cls.name,
-                    subjectId: sub.id || sub.name,
-                    subjectName: sub.name,
-                    level: cls.level,
-                    grade: cls.grade
-                  };
-                  assigned.push(classData);
-                }
-            });
-          });
-          setAssignedSubjects(assigned);
-        }
+                  // Restructured loops for stability
+                  for (const level of Object.keys(data)) {
+                    for (const grade of Object.keys(data[level])) {
+                      const cls = data[level][grade];
+                      if (cls.subjects) {
+                        for (const sub of cls.subjects) {
+                          if (sub.teacherId === user.uid) {
+                            assigned.push({
+                              classId: grade,
+                              className: cls.name,
+                              subjectId: sub.id || sub.name,
+                              subjectName: sub.name,
+                              level: level,
+                              grade: grade
+                            });
+                          }
+                        }
+                      }
+                    }
+                  }
+                  setAssignedSubjects(assigned);
 
         // Fetch Global Subjects
         const gsRef = ref(db, 'edu/courses');
