@@ -106,12 +106,12 @@ const Announcements: React.FC = () => {
       if (newAnn.targetScope === 'level') path = `edu/announcements/${newAnn.level}`;
       else if (newAnn.targetScope === 'grade') path = `edu/announcements/${newAnn.level}/${newAnn.grade}`;
       else if (newAnn.targetScope === 'class') {
-          const cls = classes.find(c => c.id === newAnn.classId);
-          path = `edu/announcements/${cls.level}/${cls.grade}/${newAnn.classId}`;
+          // Find class by level/grade
+          const cls = classes.find(c => c.level === newAnn.level && c.grade === newAnn.grade);
+          path = cls ? `edu/announcements/${cls.level}/${cls.grade}` : 'edu/announcements/global';
       }
 
       if (editingAnn) {
-        // Simple update: re-save at current location
         await update(ref(db, `${path}/${editingAnn.id}`), { ...newAnn, updatedAt: new Date().toISOString() });
       } else {
         const annRef = push(ref(db, path));
