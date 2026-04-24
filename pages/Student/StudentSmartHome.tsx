@@ -1533,7 +1533,7 @@ const StudentSmartHome: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <AlertCircle size={14} className={darkMode ? 'text-amber-400' : 'text-amber-600'} />
                             <p className={`text-xs font-bold ${darkMode ? 'text-amber-300' : 'text-amber-700'}`}>
-                              تمت موافقتك - ولي الأمر لم يرفع الوثيقة بعد
+                              بانتظار قيام ولي الأمر برفع وثيقة إثبات القرابة
                             </p>
                           </div>
                         </div>
