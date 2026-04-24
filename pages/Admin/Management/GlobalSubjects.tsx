@@ -28,7 +28,8 @@ const GlobalSubjects: React.FC = () => {
   const initialSubjectState = {
     name: '',
     code: '',
-    level: 'primary', // primary, middle, high
+    level: 'primary',
+    grade: '1',
     description: '',
     status: 'public' as 'public' | 'hidden' | 'teachers_only',
     isCertified: true
@@ -48,36 +49,38 @@ const GlobalSubjects: React.FC = () => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubject.name) return;
 
     try {
+      const { level, grade } = newSubject;
+      const path = `edu/courses/${level}/${grade}`;
+
       if (editingSubject) {
-        const subRef = ref(db, `edu/courses/${editingSubject.id}`);
-        await update(subRef, { ...newSubject });
+        await update(ref(db, `${path}/${editingSubject.id}`), { ...newSubject });
       } else {
-        const subjectsRef = ref(db, 'edu/courses');
-        const newRef = push(subjectsRef);
-        await set(newRef, {
+        const subRef = push(ref(db, path));
+        await set(subRef, {
           ...newSubject,
-          id: newRef.key,
+          id: subRef.key,
           createdAt: new Date().toISOString()
         });
       }
       setIsModalOpen(false);
       setEditingSubject(null);
-      setNewSubject(initialSubjectState);
+      setNewSubject({ ...initialSubjectState, grade: '1' });
     } catch (err) {
       alert('حدث خطأ أثناء الحفظ');
     }
   };
 
-  const toggleCertified = async (id: string, currentStatus: boolean) => {
-    try {
-      await update(ref(db, `edu/courses/${id}`), {
+  const handleDelete = async (subject: any) => {
+    if (window.confirm('هل تريد حذف هذه المادة؟')) {
+      await remove(ref(db, `edu/courses/${subject.level}/${subject.grade}/${subject.id}`));
+    }
+  };
+
         isCertified: !currentStatus
       });
     } catch (err) {
@@ -259,34 +262,44 @@ const GlobalSubjects: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-black text-slate-700">المرحلة الدراسية</label>
-                          <select 
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold appearance-none"
-                            value={newSubject.level}
-                            onChange={(e) => setNewSubject({...newSubject, level: e.target.value})}
-                          >
-                            <option value="primary">الابتدائية</option>
-                            <option value="middle">المتوسطة</option>
-                            <option value="high">الثانوية</option>
-                          </select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-black text-slate-700">حالة الاعتماد</label>
-                          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                            <input 
-                              type="checkbox" 
-                              id="certified-check"
-                              className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
-                              checked={newSubject.isCertified}
-                              onChange={(e) => setNewSubject({...newSubject, isCertified: e.target.checked})}
-                            />
-                            <label htmlFor="certified-check" className="text-sm font-bold text-slate-700 cursor-pointer">مادة معتمدة</label>
-                          </div>
-                        </div>
-                      </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-black text-slate-700">المرحلة</label>
+              <select 
+                className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold appearance-none"
+                value={newSubject.level}
+                onChange={(e) => setNewSubject({...newSubject, level: e.target.value})}
+              >
+                <option value="primary">ابتدائية</option>
+                <option value="middle">متوسطة</option>
+                <option value="high">ثانوية</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-slate-700">الصف</label>
+              <input 
+                type="text" 
+                required
+                className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold"
+                placeholder="1"
+                value={newSubject.grade}
+                onChange={(e) => setNewSubject({...newSubject, grade: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-slate-700">الاعتماد</label>
+              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 h-[60px]">
+                <input 
+                  type="checkbox" 
+                  id="certified-check"
+                  className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
+                  checked={newSubject.isCertified}
+                  onChange={(e) => setNewSubject({...newSubject, isCertified: e.target.checked})}
+                />
+                <label htmlFor="certified-check" className="text-sm font-bold text-slate-700 cursor-pointer">معتمدة</label>
+              </div>
+            </div>
+          </div>
             
             <div className="space-y-2">
               <label className="text-sm font-black text-slate-700">حالة الظهور</label>

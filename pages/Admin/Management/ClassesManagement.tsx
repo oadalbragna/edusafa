@@ -50,12 +50,32 @@ const ClassesManagement: React.FC = () => {
   });
 
   useEffect(() => {
-    const classesRef = ref(db, EDU.SCH.CLASSES);
+    const classesRef = ref(db, 'edu/sch/classes');
     const currRef = ref(db, EDU.CURRICULA);
 
     onValue(classesRef, (snapshot) => {
       if (snapshot.exists()) {
-        setClasses(Object.values(snapshot.val()));
+        const data = snapshot.val();
+        const flattenedClasses: Class[] = [];
+        
+        // Traverse hierarchical structure: level -> grade -> classId
+        Object.keys(data).forEach(level => {
+          if (typeof data[level] === 'object' && level !== 'students') { // Skip students mapping if present
+            Object.keys(data[level]).forEach(grade => {
+              if (typeof data[level][grade] === 'object') {
+                Object.keys(data[level][grade]).forEach(classId => {
+                  flattenedClasses.push({
+                    ...data[level][grade][classId],
+                    id: classId,
+                    level, // Ensure level and grade are consistent
+                    grade
+                  });
+                });
+              }
+            });
+          }
+        });
+        setClasses(flattenedClasses);
       } else {
         setClasses([]);
       }
@@ -85,7 +105,7 @@ const ClassesManagement: React.FC = () => {
     }
 
     try {
-      await remove(ref(db, `edu/sch/classes/${id}`));
+      await remove(ref(db, `edu/sch/classes/${selectedClass.level}/${selectedClass.grade}/${id}`));
       setIsDeleteModalOpen(false);
     } catch (err) {
       alert('حدث خطأ أثناء حذف الفصل');
@@ -96,7 +116,7 @@ const ClassesManagement: React.FC = () => {
     e.preventDefault();
     if (!selectedClass) return;
     try {
-      await update(ref(db, `edu/sch/classes/${selectedClass.id}`), editClass);
+      await update(ref(db, `edu/sch/classes/${selectedClass.level}/${selectedClass.grade}/${selectedClass.id}`), editClass);
       setIsEditModalOpen(false);
     } catch (err) {
       alert('حدث خطأ أثناء تحديث بيانات الفصل');
@@ -104,8 +124,10 @@ const ClassesManagement: React.FC = () => {
   };
 
   const updateClassStatus = async (id: string, status: string) => {
+    const cls = classes.find(c => c.id === id);
+    if (!cls) return;
     try {
-      await update(ref(db, `edu/sch/classes/${id}`), { status });
+      await update(ref(db, `edu/sch/classes/${cls.level}/${cls.grade}/${id}`), { status });
     } catch (err) {
       alert('حدث خطأ أثناء تحديث حالة الفصل');
     }

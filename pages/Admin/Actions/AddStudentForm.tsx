@@ -28,11 +28,22 @@ const AddStudentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         const classesRef = ref(db, 'edu/sch/classes');
         const snapshot = await get(classesRef);
         if (snapshot.exists()) {
-          const classesData = Object.entries(snapshot.val()).map(([id, data]: [string, any]) => ({
-            id,
-            ...data
-          }));
-          setClasses(classesData);
+          const data = snapshot.val();
+          const flattenedClasses: any[] = [];
+          
+          Object.keys(data).forEach(level => {
+            Object.keys(data[level]).forEach(grade => {
+              Object.keys(data[level][grade]).forEach(classId => {
+                flattenedClasses.push({
+                  ...data[level][grade][classId],
+                  id: classId,
+                  level,
+                  grade
+                });
+              });
+            });
+          });
+          setClasses(flattenedClasses);
         }
       } catch (err) {
         console.error('Error fetching classes:', err);
@@ -45,23 +56,27 @@ const AddStudentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // 1. Save to students database
-      const studentRef = push(ref(db, SYS.USERS));
-      const studentId = studentRef.key;
+      const cls = classes.find(c => c.id === formData.classId);
+      if (!cls) throw new Error('فصل دراسي غير صالح');
+
+      // 1. Save to students database (inside specific class)
+      const studentRef = ref(db, `edu/sch/classes/students/${formData.classId}`);
+      const newStudentRef = push(studentRef);
+      const studentId = newStudentRef.key;
+
       const studentData = {
         ...formData,
         id: studentId,
-        uid: studentId, // Using same ID for simplicity
+        uid: studentId,
         role: 'student',
         createdAt: new Date().toISOString(),
         status: 'approved'
       };
       
-      await set(studentRef, studentData);
+      await set(newStudentRef, studentData);
 
-      // 2. Save to users database for login
-      const userRef = ref(db, `sys/users/${studentId}`);
-      await set(userRef, {
+      // 2. Save to sys/users database for authentication
+      await set(ref(db, `sys/users/${studentId}`), {
         ...studentData,
         fullName: `${formData.firstName} ${formData.lastName}`
       });
@@ -72,7 +87,7 @@ const AddStudentForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
           type: 'student_added',
           userId: profile.uid,
           userName: profile.fullName || profile.firstName || 'مدير النظام',
-          details: `تم إضافة الطالب الجديد: ${formData.firstName} ${formData.lastName} وتم إنشاء حساب دخول له`
+          details: `تم إضافة الطالب: ${formData.firstName} ${formData.lastName} إلى الفصل: ${cls.name}`
         });
       }
 

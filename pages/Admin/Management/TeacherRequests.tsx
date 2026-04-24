@@ -39,26 +39,31 @@ export const TeacherRequests: React.FC = () => {
 
   useEffect(() => {
     const usersRef = ref(db, 'sys/users');
-    const classReqRef = ref(db, 'sys/config/teacher_class_requests');
+    const classReqRef = ref(db, 'edu/sch/teacher_class_requests');
     const classesRef = ref(db, 'edu/sch/classes');
 
-    // 1. Fetch Classes for names
+    // 1. Fetch Classes (Flattened for names)
     get(classesRef).then(snap => {
-      if (snap.exists()) setClasses(snap.val());
+      if (snap.exists()) {
+        const data = snap.val();
+        const flattenedClasses: any = {};
+        Object.keys(data).forEach(level => {
+          Object.keys(data[level]).forEach(grade => {
+            Object.keys(data[level][grade]).forEach(id => {
+              flattenedClasses[id] = data[level][grade][id];
+            });
+          });
+        });
+        setClasses(flattenedClasses);
+      }
     });
 
-    // 2. Fetch Pending Users
-    const unsubUsers = onValue(usersRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const allUsers = Object.values(snapshot.val());
-        setUserRequests(allUsers.filter((u: any) => u.status === 'pending'));
-      } else setUserRequests([]);
-    });
-
+    // ... (rest of logic)
     // 3. Fetch Pending Class Requests
     const unsubClassReqs = onValue(classReqRef, (snapshot) => {
       if (snapshot.exists()) {
-        const allReqs = Object.values(snapshot.val());
+        const data = snapshot.val();
+        const allReqs = Object.keys(data).map(key => ({ ...data[key], id: key }));
         setClassRequests(allReqs.filter((r: any) => r.status === 'pending'));
       } else setClassRequests([]);
       setLoading(false);
@@ -99,7 +104,7 @@ export const TeacherRequests: React.FC = () => {
     }
 
     try {
-      await update(ref(db, `sys/config/teacher_class_requests/${req.id}`), {
+      await update(ref(db, `edu/sch/teacher_class_requests/${req.id}`), {
         status,
         rejectionReason: status === 'rejected' ? rejectionReason : null,
         reviewedBy: adminProfile?.uid,
@@ -122,9 +127,12 @@ export const TeacherRequests: React.FC = () => {
     }
   };
 
+  const [roleFilter, setRoleFilter] = useState<'all' | 'teacher' | 'student' | 'parent'>('all');
+
   const filteredUsers = userRequests.filter(req => 
-    (req.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (req.email || '').toLowerCase().includes(searchQuery.toLowerCase())
+    (roleFilter === 'all' || req.role === roleFilter) &&
+    ((req.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+     (req.email || '').toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredClasses = classRequests.filter(req => 
@@ -150,15 +158,21 @@ export const TeacherRequests: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-        <input 
-          type="text" 
-          placeholder="البحث بالاسم أو البريد..."
-          className="w-full pr-12 pl-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none font-bold text-sm shadow-sm"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {(['all', 'teacher', 'student', 'parent'] as const).map(role => (
+          <button 
+            key={role}
+            onClick={() => setRoleFilter(role)}
+            className={`px-6 py-3 rounded-xl text-xs font-black transition-all border ${
+              roleFilter === role 
+              ? 'bg-slate-900 text-white shadow-xl' 
+              : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-200'
+            }`}
+          >
+            {role === 'all' ? 'الكل' : role === 'teacher' ? 'المعلمون' : role === 'student' ? 'الطلاب' : 'أولياء الأمور'}
+            <span className="ml-2 opacity-60">({userRequests.filter(r => role === 'all' || r.role === role).length})</span>
+          </button>
+        ))}
       </div>
 
       {viewMode === 'users' ? (

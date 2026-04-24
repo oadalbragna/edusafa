@@ -72,6 +72,6 @@ const Modal: React.FC<ModalProps> = React.memo(({ isOpen, onClose, title, childr
     </div>,
     document.body
   );
-}, (prev, next) => prev.isOpen === next.isOpen && prev.title === next.title);
+});
 
 export default Modal;

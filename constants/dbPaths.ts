@@ -85,16 +85,20 @@ export const EDU = {
   SCH: {
     ROOT: `${DB_ROOT.EDU}/sch`,
     CLASSES: `${DB_ROOT.EDU}/sch/classes`,
-    class: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}`,
-    classStudents: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/students`,
-    classStudent: (classId: string, uid: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/students/${uid}`,
+    // New hierarchical path
+    classesByGrade: (level: string, grade: string) => `${DB_ROOT.EDU}/sch/classes/${level}/${grade}`,
+    class: (level: string, grade: string, classId: string) => `${DB_ROOT.EDU}/sch/classes/${level}/${grade}/${classId}`,
+    
+    classStudents: (classId: string) => `${DB_ROOT.EDU}/sch/classes/students/${classId}`, // Keeping students mapping accessible
+    classStudent: (classId: string, uid: string) => `${DB_ROOT.EDU}/sch/classes/students/${classId}/${uid}`,
+    
     CLASSES_META: `${DB_ROOT.EDU}/sch/classes_meta`,
     SCHEDULES: `${DB_ROOT.EDU}/sch/schedules`,
     MATERIALS: `${DB_ROOT.EDU}/sch/materials`,
 
-    // Class-specific subjects (NEW structure)
-    classSubjects: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/subjects`,
-    classSubject: (classId: string, subjectId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/subjects/${subjectId}`,
+    // Inside each class subject (will need class path info)
+    classSubject: (level: string, grade: string, classId: string, subjectId: string) => 
+      `${DB_ROOT.EDU}/sch/classes/${level}/${grade}/${classId}/subjects/${subjectId}`,
 
     // Subject Categories (for organizing subjects within classes)
     classSubjectCategories: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/subject_categories`,
@@ -133,9 +137,10 @@ export const EDU = {
     classBehaviors: (classId: string) => `${DB_ROOT.EDU}/sch/classes/${classId}/behaviors`,
   },
 
-  // Courses & Subjects (Global - for reference only, not for class-specific content)
+  // Courses & Subjects (Global - organized by level/grade)
   COURSES: `${DB_ROOT.EDU}/courses`,
-  course: (courseId: string) => `${DB_ROOT.EDU}/courses/${courseId}`,
+  coursesByGrade: (level: string, grade: string) => `${DB_ROOT.EDU}/courses/${level}/${grade}`,
+  course: (level: string, grade: string, courseId: string) => `${DB_ROOT.EDU}/courses/${level}/${grade}/${courseId}`,
 
   // NEW: Behaviors (Global behaviors)
   BEHAVIORS: `${DB_ROOT.EDU}/behaviors`,

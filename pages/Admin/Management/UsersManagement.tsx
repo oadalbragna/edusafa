@@ -12,16 +12,27 @@ import {
   Edit, 
   UserX,
   Shield,
-  XCircle
+  XCircle,
+  FileText,
+  UserCheck,
+  GraduationCap,
+  BookOpen,
+  MessageSquare,
+  CreditCard,
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import { db } from '../../../services/firebase';
 import { SYS, EDU, COMM } from '../../../constants/dbPaths';
 import { ref, onValue, remove, update } from 'firebase/database';
+import { useAuth } from '../../../context/AuthContext';
+import { logActivity } from '../../../utils/activityLogger';
 
 import type { UserProfile, UserRole, UserPermissions, Class, Subject } from '../../../types';
 import Modal from '../../../components/common/Modal';
 
 const UsersManagement: React.FC = () => {
+  const { profile: currentUser } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -32,7 +43,10 @@ const UsersManagement: React.FC = () => {
   // Selected user for actions
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [userActivity, setUserActivity] = useState<any[]>([]);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
 
   // Permissions state
@@ -40,11 +54,151 @@ const UsersManagement: React.FC = () => {
   const [blockedClasses, setBlockedClasses] = useState<string[]>([]);
   const [blockedSubjects, setBlockedSubjects] = useState<string[]>([]);
 
+  // New User State
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    role: 'student' as UserRole,
+    phone: '',
+    classId: '',           // For Student
+    selectedClasses: [] as string[], // For Teacher
+    selectedSubjects: [] as string[], // For Teacher
+    studentLinks: [] as string[]    // For Parent
+  });
+
+  const fetchUserActivity = (uid: string) => {
+    const activitiesRef = ref(db, SYS.MAINTENANCE.ACTIVITIES);
+    const unsub = onValue(activitiesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const logs = Object.values(data).filter((act: any) => 
+          act.targetId === uid || act.userId === uid
+        ).sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setUserActivity(logs);
+      } else {
+        setUserActivity([]);
+      }
+    });
+    return unsub;
+  };
+
+  const openHistoryModal = (user: UserProfile) => {
+    setSelectedUser(user);
+    setIsHistoryModalOpen(true);
+    fetchUserActivity(user.uid);
+  };
+
+  const handleAddUser = async () => {
+    if (!newUser.email || !newUser.password || !newUser.firstName) {
+      alert('يرجى ملء كافة الحقول الأساسية');
+      return;
+    }
+
+    // Role-specific validation
+    if (newUser.role === 'student' && !newUser.classId) {
+      alert('يرجى اختيار الفصل الدراسي للطالب');
+      return;
+    }
+    if (newUser.role === 'teacher' && newUser.selectedClasses.length === 0) {
+      alert('يرجى اختيار فصل واحد على الأقل للمعلم');
+      return;
+    }
+    if (newUser.role === 'parent' && newUser.studentLinks.length === 0) {
+      alert('يرجى ربط ابن واحد على الأقل بولي الأمر');
+      return;
+    }
+
+    try {
+      const { AuthService } = await import('../../../services/auth.service');
+      
+      const additionalData: any = {};
+      if (newUser.role === 'student') {
+        const cls = classes.find(c => c.id === newUser.classId);
+        additionalData.classId = newUser.classId;
+        additionalData.eduLevel = cls?.level;
+        additionalData.grade = cls?.grade;
+      } else if (newUser.role === 'teacher') {
+        additionalData.selectedClasses = newUser.selectedClasses;
+        additionalData.selectedSubjects = newUser.selectedSubjects;
+      } else if (newUser.role === 'parent') {
+        additionalData.studentLinks = newUser.studentLinks;
+      }
+
+      const result = await AuthService.registerManual({
+        ...newUser,
+        ...additionalData,
+        fullName: `${newUser.firstName} ${newUser.lastName}`.trim(),
+        status: 'approved'
+      });
+
+      if (result.success) {
+        setIsAddModalOpen(false);
+        setNewUser({
+          email: '',
+          password: '',
+          firstName: '',
+          lastName: '',
+          role: 'student',
+          phone: '',
+          classId: '',
+          selectedClasses: [],
+          selectedSubjects: [],
+          studentLinks: []
+        });
+
+        if (currentUser) {
+          await logActivity({
+            type: 'student_added', 
+            userId: currentUser.uid,
+            userName: currentUser.fullName || currentUser.firstName || 'Admin',
+            details: `قام بإضافة مستخدم جديد: ${newUser.firstName} ${newUser.lastName} برتبة ${newUser.role}`,
+            targetId: result.user?.uid,
+            targetName: result.user?.fullName
+          });
+        }
+      } else {
+        alert(result.error);
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء إضافة المستخدم');
+    }
+  };
+
+  const handleDeleteUser = async (uid: string) => {
+    try {
+      await remove(ref(db, `sys/users/${uid}`));
+      
+      if (currentUser && selectedUser) {
+        await logActivity({
+          type: 'user_rejected', // Using user_rejected as a proxy for deletion
+          userId: currentUser.uid,
+          userName: currentUser.fullName || currentUser.firstName || 'Admin',
+          details: `قام بحذف حساب المستخدم: ${selectedUser.fullName || selectedUser.firstName}`,
+          targetId: uid,
+          targetName: selectedUser.fullName || selectedUser.firstName
+        });
+      }
+      
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      alert('حدث خطأ أثناء حذف المستخدم');
+    }
+  };
+
   useEffect(() => {
     const usersRef = ref(db, 'sys/users');
     const unsubUsers = onValue(usersRef, (snapshot) => {
       if (snapshot.exists()) {
-        setUsers(Object.values(snapshot.val()));
+        const data = snapshot.val();
+        const usersList = Object.keys(data).map(key => ({
+          ...data[key],
+          uid: key
+        }));
+        setUsers(usersList);
       } else {
         setUsers([]);
       }
@@ -83,7 +237,16 @@ const UsersManagement: React.FC = () => {
       announcements: true,
       messaging: true,
       accessMaterials: true,
-      interact: true
+      interact: true,
+      manageStudents: user.role === 'teacher',
+      gradeStudents: user.role === 'teacher',
+      addAssignments: user.role === 'teacher',
+      viewReports: user.role === 'teacher' || user.role === 'parent',
+      participateDiscussions: user.role === 'student',
+      uploadFiles: user.role === 'student',
+      viewResults: user.role === 'student' || user.role === 'parent',
+      monitorMultipleStudents: user.role === 'parent',
+      receiveAttendanceNotifications: user.role === 'parent'
     });
     setBlockedClasses(user.blockedClasses || []);
     setBlockedSubjects(user.blockedSubjects || []);
@@ -91,28 +254,43 @@ const UsersManagement: React.FC = () => {
   };
 
   const handleUpdateRoleAndPermissions = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || !currentUser) return;
     try {
+      const isRoleChanged = pendingRole && pendingRole !== selectedUser.role;
       const updates: any = { 
         role: pendingRole || selectedUser.role,
         permissions,
         blockedClasses,
         blockedSubjects
       };
+      
       await update(ref(db, `sys/users/${selectedUser.uid}`), updates);
+      
+      // Log activity
+      if (isRoleChanged) {
+        await logActivity({
+          type: 'role_updated',
+          userId: currentUser.uid,
+          userName: currentUser.fullName || currentUser.firstName || 'Admin',
+          details: `قام بتغيير رتبة المستخدم ${selectedUser.fullName || selectedUser.firstName} من ${selectedUser.role} إلى ${pendingRole}`,
+          targetId: selectedUser.uid,
+          targetName: selectedUser.fullName || selectedUser.firstName
+        });
+      } else {
+        await logActivity({
+          type: 'permission_updated',
+          userId: currentUser.uid,
+          userName: currentUser.fullName || currentUser.firstName || 'Admin',
+          details: `قام بتحديث صلاحيات المستخدم ${selectedUser.fullName || selectedUser.firstName}`,
+          targetId: selectedUser.uid,
+          targetName: selectedUser.fullName || selectedUser.firstName
+        });
+      }
+
       setIsEditModalOpen(false);
       setPendingRole(null);
     } catch (err) {
       alert('حدث خطأ أثناء تحديث بيانات المستخدم');
-    }
-  };
-
-  const handleDeleteUser = async (uid: string) => {
-    try {
-      await remove(ref(db, `sys/users/${uid}`));
-      setIsDeleteModalOpen(false);
-    } catch (err) {
-      alert('حدث خطأ أثناء حذف المستخدم');
     }
   };
 
@@ -168,7 +346,10 @@ const UsersManagement: React.FC = () => {
           <p className="text-slate-500 font-medium mt-1">التحكم الكامل في صلاحيات وبيانات مستخدمي المنصة</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <button className="flex-1 md:flex-none btn-premium btn-primary flex items-center justify-center gap-2 shadow-xl shadow-blue-100 px-8">
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex-1 md:flex-none btn-premium btn-primary flex items-center justify-center gap-2 shadow-xl shadow-blue-100 px-8"
+          >
             <UserPlus size={18} />
             <span>إضافة مستخدم</span>
           </button>
@@ -305,18 +486,28 @@ const UsersManagement: React.FC = () => {
                                   <td className="px-8 py-5 text-left">
                                     <div className="flex items-center justify-end gap-2">
                                       <button 
+                                        onClick={() => openHistoryModal(user)}
+                                        className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all"
+                                        title="عرض سجل العمليات"
+                                      >
+                                        <Clock size={18} />
+                                      </button>
+                                      <button 
                                         onClick={() => openEditModal(user)}
                                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                        title="تعديل الصلاحيات"
                                       >
                                         <Edit size={18} />
                                       </button>
                                       <button 
-                                        onClick={() => {setSelectedUser(user); setIsDeleteModalOpen(true);}}                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
+                                        onClick={() => {setSelectedUser(user); setIsDeleteModalOpen(true);}}
+                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                        title="حذف المستخدم"
+                                      >
+                                        <Trash2 size={18} />
+                                      </button>
+                                    </div>
+                                  </td>
               </tr>
             ))}
           </tbody>
@@ -349,7 +540,7 @@ const UsersManagement: React.FC = () => {
                     key={role}
                     onClick={() => setPendingRole(role)}
                     className={`p-4 rounded-2xl border-2 text-right font-black transition-all flex justify-between items-center ${
-                      (pendingRole || selectedUser.role) === role 
+                      (pendingRole ? pendingRole === role : selectedUser.role === role) 
                       ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-sm' 
                       : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
                     }`}
@@ -362,80 +553,304 @@ const UsersManagement: React.FC = () => {
             </div>
 
             {/* Permissions & Restrictions */}
-            {(selectedUser.role === 'teacher' || selectedUser.role === 'student') && (
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                  <Shield size={16} className="text-blue-600" /> إدارة الصلاحيات المخصصة
-                </h4>
-                
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                <Shield size={16} className="text-blue-600" /> إدارة الصلاحيات المخصصة
+              </h4>
+
+              {/* General Permissions */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 p-2 rounded-lg">صلاحيات عامة</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                  <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                       checked={permissions.readOnly || false}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, readOnly: e.target.checked }))}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setPermissions(prev => ({ ...prev, readOnly: val }));
+                      }}
                     />
-                    <span className="text-sm font-bold text-slate-700">القراءة فقط (منع التعديل)</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-700">القراءة فقط</span>
+                      <span className="text-[10px] text-slate-400">منع المستخدم من أي تعديل أو رفع</span>
+                    </div>
                   </label>
 
-                  {selectedUser.role === 'teacher' && (
-                    <>
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                          checked={permissions.uploadEditDelete !== false}
-                          onChange={(e) => setPermissions(prev => ({ ...prev, uploadEditDelete: e.target.checked }))}
-                        />
-                        <span className="text-sm font-bold text-slate-700">الرفع والتعديل والحذف</span>
-                      </label>
-                      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                          checked={permissions.announcements !== false}
-                          onChange={(e) => setPermissions(prev => ({ ...prev, announcements: e.target.checked }))}
-                        />
-                        <span className="text-sm font-bold text-slate-700">نشر الإعلانات</span>
-                      </label>
-                    </>
-                  )}
-
-                  {selectedUser.role === 'student' && (
-                    <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                        checked={permissions.accessMaterials !== false}
-                        onChange={(e) => setPermissions(prev => ({ ...prev, accessMaterials: e.target.checked }))}
-                      />
-                      <span className="text-sm font-bold text-slate-700">الحصول على المقررات</span>
-                    </label>
-                  )}
-
-                  <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+                  <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                       checked={permissions.messaging !== false}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, messaging: e.target.checked }))}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setPermissions(prev => ({ ...prev, messaging: val }));
+                      }}
                     />
-                    <span className="text-sm font-bold text-slate-700">المراسلات مع {selectedUser.role === 'teacher' ? 'الطلاب' : 'المعلمين'}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-700">نظام المراسلات</span>
+                      <span className="text-[10px] text-slate-400">السماح بإرسال واستقبال الرسائل</span>
+                    </div>
                   </label>
-                  
-                  <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+
+                  <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
                       checked={permissions.interact !== false}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, interact: e.target.checked }))}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setPermissions(prev => ({ ...prev, interact: val }));
+                      }}
                     />
-                    <span className="text-sm font-bold text-slate-700">التفاعل العام بالمنصة</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold text-slate-700">التفاعل العام</span>
+                      <span className="text-[10px] text-slate-400">التعليقات، التفاعلات، والمشاركة</span>
+                    </div>
                   </label>
                 </div>
+              </div>
 
-                <div className="pt-4 space-y-4">
+              {/* Teacher Specific Permissions */}
+              {((pendingRole || selectedUser.role) === 'teacher' || (pendingRole || selectedUser.role) === 'admin') && (
+                <div className="space-y-3 pt-2">
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 p-2 rounded-lg flex items-center gap-2">
+                    <GraduationCap size={14} /> صلاحيات المعلم / الإدارة
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.uploadEditDelete !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, uploadEditDelete: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">إدارة المحتوى</span>
+                        <span className="text-[10px] text-slate-400">رفع وتعديل وحذف المحاضرات</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.announcements !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, announcements: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">نشر الإعلانات</span>
+                        <span className="text-[10px] text-slate-400">إرسال تنبيهات عامة للفصول</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.manageStudents !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, manageStudents: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">إدارة الطلاب</span>
+                        <span className="text-[10px] text-slate-400">قبول/رفض وحظر الطلاب</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.gradeStudents !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, gradeStudents: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">رصد الدرجات</span>
+                        <span className="text-[10px] text-slate-400">تقييم الطلاب ووضع العلامات</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.addAssignments !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, addAssignments: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">الواجبات والاختبارات</span>
+                        <span className="text-[10px] text-slate-400">إضافة المهام الدراسية والتقييمات</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.financialManage || false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, financialManage: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">الإدارة المالية</span>
+                        <span className="text-[10px] text-slate-400">إصدار الفواتير وتحصيل الرسوم</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Student Specific Permissions */}
+              {((pendingRole || selectedUser.role) === 'student') && (
+                <div className="space-y-3 pt-2">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 p-2 rounded-lg flex items-center gap-2">
+                    <BookOpen size={14} /> صلاحيات الطالب
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.accessMaterials !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, accessMaterials: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">المقررات الدراسية</span>
+                        <span className="text-[10px] text-slate-400">الوصول للمواد والمحاضرات</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.participateDiscussions !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, participateDiscussions: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">نقاشات الفصول</span>
+                        <span className="text-[10px] text-slate-400">المشاركة في الحوارات الصفية</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.uploadFiles !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, uploadFiles: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">رفع الملفات</span>
+                        <span className="text-[10px] text-slate-400">تسليم الواجبات والملفات الخاصة</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.viewResults !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, viewResults: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">عرض النتائج</span>
+                        <span className="text-[10px] text-slate-400">رؤية الدرجات والتقارير الأكاديمية</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Parent Specific Permissions */}
+              {((pendingRole || selectedUser.role) === 'parent') && (
+                <div className="space-y-3 pt-2">
+                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest bg-orange-50 p-2 rounded-lg flex items-center gap-2">
+                    <Users size={14} /> صلاحيات ولي الأمر
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.monitorMultipleStudents !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, monitorMultipleStudents: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">متابعة متعددة</span>
+                        <span className="text-[10px] text-slate-400">ربط ومتابعة أكثر من طالب</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.receiveAttendanceNotifications !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, receiveAttendanceNotifications: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">تنبيهات الحضور</span>
+                        <span className="text-[10px] text-slate-400">استلام إشعارات غياب/حضور الأبناء</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        checked={permissions.viewReports !== false}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          setPermissions(prev => ({ ...prev, viewReports: val }));
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-700">التقارير المالية</span>
+                        <span className="text-[10px] text-slate-400">عرض فواتير ومستحقات الأبناء</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 flex items-center gap-2">
                       <XCircle size={16} className="text-red-500" /> حظر الإشراف/التواجد في فصول محددة
@@ -501,35 +916,36 @@ const UsersManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
 
             {/* Save Button for Permissions if no role change, else combined confirmation */}
-            {(!pendingRole || pendingRole === selectedUser.role) ? (
-              <button 
-                onClick={handleUpdateRoleAndPermissions}
-                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={20} />
-                حفظ الصلاحيات والتعديلات
-              </button>
-            ) : (
-              /* Confirmation Step */
-              <div className="pt-6 border-t border-slate-100 space-y-4 animate-in slide-in-from-bottom-4">
-                 <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-3">
-                    <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                    <p className="text-xs font-bold text-blue-700 leading-relaxed">
-                       هل أنت متأكد من تغيير رتبة المستخدم إلى <span className="underline decoration-blue-300 font-black">"{pendingRole === 'admin' ? 'مدير نظام' : pendingRole === 'teacher' ? 'معلم' : pendingRole === 'student' ? 'طالب' : 'ولي أمر'}"</span>؟
-                    </p>
-                 </div>
-                 <button 
-                   onClick={handleUpdateRoleAndPermissions}
-                   className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                 >
-                   <CheckCircle2 size={20} />
-                   تأكيد تعيين الدور الجديد
-                 </button>
-              </div>
-            )}
+            <div className="pt-6 border-t border-slate-100">
+              {(!pendingRole || pendingRole === selectedUser.role) ? (
+                <button 
+                  onClick={handleUpdateRoleAndPermissions}
+                  className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 size={20} />
+                  حفظ الصلاحيات والتعديلات
+                </button>
+              ) : (
+                /* Confirmation Step */
+                <div className="space-y-4 animate-in slide-in-from-bottom-4">
+                   <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-3">
+                      <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={20} />
+                      <p className="text-xs font-bold text-blue-700 leading-relaxed">
+                         هل أنت متأكد من تغيير رتبة المستخدم إلى <span className="underline decoration-blue-300 font-black">"{pendingRole === 'admin' ? 'مدير نظام' : pendingRole === 'teacher' ? 'معلم' : pendingRole === 'student' ? 'طالب' : 'ولي أمر'}"</span>؟
+                      </p>
+                   </div>
+                   <button 
+                     onClick={handleUpdateRoleAndPermissions}
+                     className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                   >
+                     <CheckCircle2 size={20} />
+                     تأكيد تعيين الدور الجديد
+                   </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
@@ -563,6 +979,271 @@ const UsersManagement: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Add User Modal */}
+      <Modal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        title="إضافة مستخدم جديد للنظام"
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">الاسم الأول</label>
+              <input 
+                type="text" 
+                value={newUser.firstName}
+                onChange={(e) => setNewUser(prev => ({...prev, firstName: e.target.value}))}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="مثال: مبارك"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">الاسم الأخير</label>
+              <input 
+                type="text" 
+                value={newUser.lastName}
+                onChange={(e) => setNewUser(prev => ({...prev, lastName: e.target.value}))}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="مثال: عزوز"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">البريد الإلكتروني (أو اسم المستخدم)</label>
+            <div className="relative">
+              <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="email" 
+                value={newUser.email}
+                onChange={(e) => setNewUser(prev => ({...prev, email: e.target.value}))}
+                className="w-full pr-12 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="user@example.com"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">كلمة المرور المؤقتة</label>
+            <div className="relative">
+              <Shield className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="password" 
+                value={newUser.password}
+                onChange={(e) => setNewUser(prev => ({...prev, password: e.target.value}))}
+                className="w-full pr-12 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">الرتبة الوظيفية</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['student', 'teacher', 'parent', 'admin'] as UserRole[]).map((role) => (
+                <button
+                  key={role}
+                  onClick={() => setNewUser(prev => ({
+                    ...prev, 
+                    role,
+                    classId: '',
+                    selectedClasses: [],
+                    selectedSubjects: [],
+                    studentLinks: []
+                  }))}
+                  className={`p-3 rounded-xl border-2 text-sm font-black transition-all ${
+                    newUser.role === role 
+                    ? 'border-blue-600 bg-blue-50 text-blue-600' 
+                    : 'border-slate-100 bg-white text-slate-500'
+                  }`}
+                >
+                  {role === 'admin' ? 'مدير' : role === 'teacher' ? 'معلم' : role === 'student' ? 'طالب' : 'ولي أمر'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dynamic Fields based on Role */}
+          <div className="pt-4 border-t border-slate-100 space-y-4 animate-in fade-in duration-500">
+            {newUser.role === 'student' && (
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                  <GraduationCap size={16} className="text-blue-600" /> الفصل الدراسي للطالب
+                </label>
+                <select 
+                  value={newUser.classId}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, classId: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold"
+                >
+                  <option value="">اختر الفصل الدراسي...</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} - الصف {c.grade}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {newUser.role === 'teacher' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                    <Shield size={16} className="text-blue-600" /> الفصول الدراسية (إشراف)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {classes.map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          const exists = newUser.selectedClasses.includes(c.id);
+                          setNewUser(prev => ({
+                            ...prev,
+                            selectedClasses: exists 
+                              ? prev.selectedClasses.filter(id => id !== c.id)
+                              : [...prev.selectedClasses, c.id]
+                          }));
+                        }}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                          newUser.selectedClasses.includes(c.id)
+                          ? 'border-blue-600 bg-blue-50 text-blue-600'
+                          : 'border-slate-50 bg-slate-50 text-slate-500'
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                    <BookOpen size={16} className="text-blue-600" /> المقررات والمواد (تدريس)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {subjects.map((s: any) => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          const exists = newUser.selectedSubjects.includes(s.id);
+                          setNewUser(prev => ({
+                            ...prev,
+                            selectedSubjects: exists 
+                              ? prev.selectedSubjects.filter(id => id !== s.id)
+                              : [...prev.selectedSubjects, s.id]
+                          }));
+                        }}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                          newUser.selectedSubjects.includes(s.id)
+                          ? 'border-emerald-600 bg-emerald-50 text-emerald-600'
+                          : 'border-slate-50 bg-slate-50 text-slate-500'
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {newUser.role === 'parent' && (
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                  <Users size={16} className="text-blue-600" /> ربط الأبناء (الطلاب)
+                </label>
+                <div className="relative mb-2">
+                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                   <input 
+                     type="text"
+                     placeholder="ابحث عن اسم الطالب..."
+                     className="w-full pr-10 pl-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold"
+                     onChange={(e) => {
+                       const val = e.target.value.toLowerCase();
+                       // We can use this to highlight or scroll to student
+                     }}
+                   />
+                </div>
+                <div className="max-h-[150px] overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                  {users.filter(u => u.role === 'student').map(student => (
+                    <label 
+                      key={student.uid}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
+                        newUser.studentLinks.includes(student.uid) ? 'bg-orange-50' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <input 
+                        type="checkbox"
+                        checked={newUser.studentLinks.includes(student.uid)}
+                        onChange={(e) => {
+                          const exists = newUser.studentLinks.includes(student.uid);
+                          setNewUser(prev => ({
+                            ...prev,
+                            studentLinks: exists 
+                              ? prev.studentLinks.filter(id => id !== student.uid)
+                              : [...prev.studentLinks, student.uid]
+                          }));
+                        }}
+                        className="w-4 h-4 rounded text-orange-600"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-700">{student.fullName || student.firstName}</span>
+                        <span className="text-[10px] text-slate-400">الصف {student.grade || 'غير محدد'}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button 
+            onClick={handleAddUser}
+            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+          >
+            <UserCheck size={20} />
+            تأكيد إضافة المستخدم
+          </button>
+        </div>
+      </Modal>
+
+      {/* User History/Logs Modal */}
+      <Modal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+        title={`سجل نشاطات: ${selectedUser?.fullName || selectedUser?.firstName || 'المستخدم'}`}
+      >
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          {userActivity.length > 0 ? (
+            userActivity.map((log, idx) => (
+              <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 relative overflow-hidden">
+                <div className="flex justify-between items-start">
+                  <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${
+                    log.type.includes('added') || log.type.includes('approved') ? 'bg-green-100 text-green-700' :
+                    log.type.includes('updated') || log.type.includes('permission') ? 'bg-blue-100 text-blue-700' :
+                    'bg-slate-200 text-slate-700'
+                  }`}>
+                    {log.type}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                    <Clock size={10} /> {new Date(log.createdAt).toLocaleString('ar-SA')}
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-slate-700 leading-relaxed">{log.details}</p>
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-200/50">
+                   <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-[8px] text-white font-black">
+                      {log.userName?.[0]}
+                   </div>
+                   <span className="text-[10px] text-slate-500 font-bold">بواسطة: {log.userName}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-12 space-y-3">
+               <AlertCircle size={48} className="mx-auto text-slate-200" />
+               <p className="text-slate-400 font-bold">لا توجد نشاطات مسجلة لهذا المستخدم حتى الآن</p>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

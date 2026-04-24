@@ -94,12 +94,12 @@ export const TelegramService = {
       return { success: false, error: 'لم يتم اختيار ملف' };
     }
 
-    // Check file size (10MB max - Telegram limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Check file size (50MB max - Telegram Bot API limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
       return {
         success: false,
-        error: `حجم الملف كبير جداً (${(file.size / 1024 / 1024).toFixed(1)} MB). الحد الأقصى 10 MB`
+        error: `حجم الملف كبير جداً (${(file.size / 1024 / 1024).toFixed(1)} MB). الحد الأقصى 50 MB`
       };
     }
 
@@ -146,16 +146,14 @@ export const TelegramService = {
 
       const uploadData = await uploadResponse.json();
 
-      if (!uploadData.ok || !uploadData.result || !uploadData.result.document) {
+      const result = uploadData.result;
+      // Get file info from any available field (document, video, audio, etc.)
+      const fileData = result?.document || result?.video || result?.audio || (result?.photo ? result.photo[result.photo.length - 1] : null) || result?.voice;
+      const fileId = fileData?.file_id;
+
+      if (!uploadData.ok || !result || !fileId) {
         console.error('❌ Invalid Telegram response:', uploadData);
         return { success: false, error: 'فشل الرفع: استجابة غير صالحة من تيليجرام' };
-      }
-
-      const document = uploadData.result.document;
-      const fileId = document.file_id;
-
-      if (!fileId) {
-        return { success: false, error: 'لم يتم استلام معرف الملف من تيليجرام' };
       }
 
       console.log('✅ File uploaded to Telegram, file_id:', fileId);

@@ -154,12 +154,8 @@ export const AuthService = {
         fullName: userData.fullName || `${userData.firstName || ''} ${userData.lastName || userData.secondName || ''}`.trim(),
         // Email is optional for parents
         email: userData.email || '',
-        // الجميع بانتظار التفعيل عدا رتبة الأدمن (إذا وجدت) أو المعلم بكود تجريبي
-        status: (
-          userData.role === 'admin' || 
-          userData.role === 'super_admin' || 
-          (userData.role === 'teacher' && userData.inviteCode === 'TEACHER-TRIAL-2026')
-        ) ? 'approved' : 'pending',
+        // الجميع بانتظار التفعيل عدا رتبة الأدمن الأعلى
+        status: (userData.role === 'super_admin') ? 'approved' : 'pending',
         createdAt: new Date().toISOString(),
         lastSeen: serverTimestamp(),
         // For parents, add student link info

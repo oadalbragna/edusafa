@@ -231,20 +231,34 @@ const StudentSmartHome: React.FC = () => {
          }, (err) => { console.error('Slider error:', err); });
        } catch (err) { console.error('Slider fetch error:', err); }
 
-      // Fetch Announcements
+  // Fetch Announcements (Targeted)
       try {
-        const annRef = ref(db, SYS.ANNOUNCEMENTS);
+        const annRef = ref(db, 'edu/announcements');
         onValue(annRef, (snapshot) => {
           if (snapshot.exists()) {
-            const data = Object.values(snapshot.val()) as any[];
-            setAnnouncements(data.filter((a: any) => {
-              const isVisible = a.status === 'public' || !a.status;
-              const matchesTarget = a.target === 'all' || a.target === 'students' || a.target === profile?.eduLevel || a.target === currentClassId;
-              return isVisible && matchesTarget;
-            }).reverse().slice(0, 10));
+            const data = snapshot.val();
+            const annList: any[] = [];
+            
+            // Helper to get announcements at specific hierarchical path
+            const getAnn = (path: any) => {
+                if (path && typeof path === 'object') {
+                    Object.keys(path).forEach(k => {
+                        if (path[k].title) annList.push({ ...path[k], id: k });
+                        else getAnn(path[k]);
+                    });
+                }
+            };
+            
+            getAnn(data.global);
+            if (profile?.eduLevel) getAnn(data[profile.eduLevel]);
+            if (profile?.eduLevel && profile?.grade) getAnn(data[profile.eduLevel]?.[profile.grade]);
+            if (profile?.classId) getAnn(data[profile.eduLevel]?.[profile.grade]?.[profile.classId]);
+
+            annList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setAnnouncements(annList.slice(0, 5));
           }
-        }, (err) => { console.error('Announcements error:', err); });
-      } catch (err) { console.error('Announcements fetch error:', err); }
+        });
+      } catch (err) { console.error('Announcements error:', err); }
 
       // Fetch Grades
       if (profile?.uid && currentClassId) {
@@ -276,15 +290,15 @@ const StudentSmartHome: React.FC = () => {
 
       // Fetch Class & Subjects
       try {
-        const classesRef = ref(db, EDU.SCH.CLASSES);
-        const snapshot = await get(classesRef);
-        if (snapshot.exists()) {
-          const classesData = snapshot.val();
-          const foundClass = Object.values(classesData).find((cls: any) =>
-            cls.id === currentClassId || (cls.level === profile?.eduLevel && cls.grade === profile?.grade)
-          );
-          setMyClass(foundClass);
-          if (foundClass?.subjects) setClassSubjects(foundClass.subjects.filter((s: any) => s.status === 'public'));
+        if (profile?.eduLevel && profile?.grade) {
+          const classesRef = ref(db, `edu/sch/classes/${profile.eduLevel}/${profile.grade}`);
+          const snapshot = await get(classesRef);
+          if (snapshot.exists()) {
+            const classesData = snapshot.val();
+            const foundClass = Object.values(classesData).find((cls: any) => cls.id === currentClassId);
+            setMyClass(foundClass);
+            if (foundClass?.subjects) setClassSubjects(foundClass.subjects.filter((s: any) => s.status === 'public'));
+          }
         }
       } catch (err) { console.error('Class fetch error:', err); }
 
@@ -1220,11 +1234,39 @@ const StudentSmartHome: React.FC = () => {
               <div className="p-2 rounded-lg bg-amber-50 text-amber-600"><FileCheck size={18} /></div>
               <div className="flex-1"><p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>{e.title}</p></div>
               <button className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold">بدء</button></div>)) : <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'} text-center py-8`}>لا توجد اختبارات</p>)}
-            {activeMaterialTab==='assignments' && (materials.assignments.length>0 ? materials.assignments.map((a:any,i)=>(<div key={i} className={`p-4 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-slate-50'} flex items-center gap-3`}>
-              <div className="p-2 rounded-lg bg-rose-50 text-rose-600"><FileCheck size={18} /></div>
-              <div className="flex-1"><p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>{a.title}</p>
-                <p className={`text-[10px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>آخر موعد: {new Date(a.dueDate).toLocaleDateString('ar-SA')}</p></div>
-              <button onClick={()=>{setSelectedAssignment(a);setShowAssignmentModal(true);}} className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-xs font-bold">تسليم</button></div>)) : <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'} text-center py-8`}>لا توجد واجبات</p>)}
+          {/* Smart Assignments Timeline */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <h2 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-slate-800'} flex items-center gap-2`}>
+                <ClipboardList className={theme.accent} size={22} />جدول المهام</h2>
+            </div>
+            {materials.assignments.length > 0 ? (
+              <div className="space-y-3">
+                {materials.assignments.sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()).map((assign, idx) => {
+                    const isUrgent = new Date(assign.dueDate).getTime() - Date.now() < 86400000;
+                    return (
+                        <div key={idx} className={`p-4 rounded-2xl ${isUrgent ? 'bg-red-50' : darkMode ? 'bg-slate-800' : 'bg-white'} border ${isUrgent ? 'border-red-200' : darkMode ? 'border-slate-700' : 'border-slate-100'} shadow-sm flex items-center gap-4`}>
+                            <div className={`p-3 rounded-xl ${isUrgent ? 'bg-red-100 text-red-600' : theme.iconBg}`}>
+                                <ClipboardList size={20} />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className={`font-black ${darkMode ? 'text-white' : 'text-slate-800'}`}>{assign.title}</h4>
+                                <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>الموعد النهائي: {new Date(assign.dueDate).toLocaleDateString('ar-SA')}</p>
+                            </div>
+                            <button onClick={()=>{setSelectedAssignment(assign);setShowAssignmentModal(true);}} className={`px-4 py-2 rounded-xl font-black text-xs ${isUrgent ? 'bg-red-600 text-white' : theme.bgAccent + ' text-white'}`}>
+                                {isUrgent ? 'تسليم عاجل' : 'تسليم'}
+                            </button>
+                        </div>
+                    )
+                })}
+              </div>
+            ) : (
+                <div className={`p-8 rounded-2xl ${darkMode ? 'bg-slate-800' : 'bg-white'} border ${darkMode ? 'border-slate-700' : 'border-slate-100'} text-center`}>
+                    <CheckCircle size={40} className={`mx-auto mb-3 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                    <p className={`font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>لا توجد مهام حالياً</p>
+                </div>
+            )}
+          </div>
           </div></div></div>)}
 
       {/* Account Settings Modal */}
@@ -1653,21 +1695,52 @@ const StudentSmartHome: React.FC = () => {
           )}
         </div></div>)}
 
-      {/* Grades Modal */}
-      {showGradesModal && (<div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowGradesModal(false)}></div>
-        <div className={`relative w-full md:max-w-lg max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-slate-900' : 'bg-white'} rounded-t-3xl md:rounded-3xl p-6 animate-in slide-in-from-bottom`}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-slate-800'}`}>الدرجات التفصيلية</h2>
-            <button onClick={() => setShowGradesModal(false)} className={`p-2 rounded-xl ${darkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}><X size={20} className={darkMode ? 'text-white' : 'text-slate-600'} /></button></div>
-          <div className="space-y-3">
-            {Object.keys(grades).length>0 ? Object.entries(grades).map(([subject,score]:[string,any],idx:number)=>(<div key={idx} className={`p-4 rounded-xl ${darkMode ? 'bg-slate-800' : 'bg-slate-50'} flex items-center justify-between`}>
-              <span className={`font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>{subject}</span>
-              <span className={`font-black ${theme.accent}`}>{score}%</span></div>)) :
-              (<div className={`p-8 rounded-2xl ${darkMode ? 'bg-slate-800' : 'bg-white'} text-center`}>
-                <BarChart3 size={48} className={`mx-auto mb-4 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
-                <p className={`font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>لا توجد درجات بعد</p></div>)}
-          </div></div></div>)}
+      {/* Grades Analytics Modal */}
+      {showGradesModal && (
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowGradesModal(false)}></div>
+          <div className={`relative w-full md:max-w-lg max-h-[90vh] overflow-y-auto ${darkMode ? 'bg-slate-900' : 'bg-white'} rounded-t-3xl md:rounded-3xl p-6 animate-in slide-in-from-bottom`}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-slate-800'}`}>سجل الأداء الأكاديمي</h2>
+              <button onClick={() => setShowGradesModal(false)} className={`p-2 rounded-xl ${darkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}><X size={20} className={darkMode ? 'text-white' : 'text-slate-600'} /></button>
+            </div>
+            
+            {/* Overall Progress */}
+            <div className={`p-6 rounded-2xl ${theme.iconBg} mb-6`}>
+                <p className="text-[10px] font-black uppercase mb-1 opacity-70">المعدل التراكمي العام</p>
+                <div className="flex items-end gap-2">
+                    <span className="text-4xl font-black">{stats.overallProgress}%</span>
+                    <span className="text-sm font-bold opacity-80 mb-1">/ 100</span>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+              {Object.keys(grades).length > 0 ? Object.entries(grades).map(([subject, score]: [string, any], idx: number) => {
+                  let status = score >= 90 ? { label: 'ممتاز', color: 'text-emerald-600' } : score >= 75 ? { label: 'جيد جداً', color: 'text-blue-600' } : { label: 'مقبول', color: 'text-amber-600' };
+                  return (
+                    <div key={idx} className={`p-4 rounded-2xl ${darkMode ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                        <div className="flex justify-between items-center mb-2">
+                            <span className={`font-black ${darkMode ? 'text-white' : 'text-slate-800'}`}>{subject}</span>
+                            <span className={`font-black text-lg ${status.color}`}>{score}%</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] font-bold mb-1">
+                            <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>التقدير: {status.label}</span>
+                        </div>
+                        <div className={`h-2 w-full rounded-full ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                            <div className={`h-full rounded-full ${score >= 90 ? 'bg-emerald-500' : score >= 75 ? 'bg-blue-500' : 'bg-amber-500'}`} style={{ width: `${score}%` }}></div>
+                        </div>
+                    </div>
+                  );
+              }) : (
+                <div className="text-center py-12">
+                    <BarChart3 size={48} className="mx-auto mb-4 text-slate-300" />
+                    <p className="font-bold text-slate-400">لا توجد درجات مسجلة بعد</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Assignment Submission Modal */}
       {showAssignmentModal && selectedAssignment && (<div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">

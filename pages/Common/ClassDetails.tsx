@@ -142,8 +142,8 @@ const ClassDetails: React.FC = () => {
 
   // Load categories
   useEffect(() => {
-    if (!id) return;
-    const categoriesRef = ref(db, EDU.SCH.classSubjectCategories(id));
+    if (!id || !classData) return;
+    const categoriesRef = ref(db, `edu/sch/classes/${classData.level}/${classData.grade}/${id}/subject_categories`);
     
     const handleCategories = (snapshot: any) => {
       if (snapshot.exists()) {
@@ -160,17 +160,17 @@ const ClassDetails: React.FC = () => {
 
     onValue(categoriesRef, handleCategories);
     return () => off(categoriesRef);
-  }, [id]);
+  }, [id, classData]);
 
   // Load subjects for each category
   useEffect(() => {
-    if (!id || categories.length === 0) return;
+    if (!id || !classData || categories.length === 0) return;
 
     const subjectsMap: Record<string, CategorizedSubject[]> = {};
     let loadedCount = 0;
 
     categories.forEach((category) => {
-      const subjectsRef = ref(db, EDU.SCH.classCategorySubjects(id, category.id));
+      const subjectsRef = ref(db, `edu/sch/classes/${classData.level}/${classData.grade}/${id}/subject_categories/${category.id}/subjects`);
       
       const handleSubjects = (snapshot: any) => {
         if (snapshot.exists()) {
@@ -195,10 +195,10 @@ const ClassDetails: React.FC = () => {
 
     return () => {
       categories.forEach((category) => {
-        off(ref(db, EDU.SCH.classCategorySubjects(id, category.id)));
+        off(ref(db, `edu/sch/classes/${classData.level}/${classData.grade}/${id}/subject_categories/${category.id}/subjects`));
       });
     };
-  }, [id, categories]);
+  }, [id, classData, categories]);
 
   const toggleCategory = useCallback((categoryId: string) => {
     setExpandedCategories(prev => {

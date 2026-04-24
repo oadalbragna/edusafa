@@ -45,6 +45,15 @@ export interface UserPermissions {
   interact?: boolean;
   financialManage?: boolean; // Can issue invoices and record payments
   financialView?: boolean;   // Can only view reports
+  manageStudents?: boolean;
+  gradeStudents?: boolean;
+  addAssignments?: boolean;
+  viewReports?: boolean;
+  participateDiscussions?: boolean;
+  uploadFiles?: boolean;
+  viewResults?: boolean;
+  monitorMultipleStudents?: boolean;
+  receiveAttendanceNotifications?: boolean;
 }
 
 export interface UserProfile {

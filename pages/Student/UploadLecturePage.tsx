@@ -8,15 +8,12 @@ import {
 } from 'lucide-react';
 import { ref, push, set, serverTimestamp, onValue, remove } from 'firebase/database';
 import { db } from '../../services/firebase';
+import { TelegramService } from '../../services/telegram.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
 import { ImageProcessingService, FileCategory } from '../../services/api/ImageProcessingService';
 import { Button, Input, Card, Badge, Modal } from '../../components/ui';
 import { motion, AnimatePresence } from 'framer-motion';
-// TODO: Create these services/components if they don't exist
-// import { UnifiedUploadService } from '../../services/api/UnifiedUploadService';
-// import { useUpload } from '../../context/UploadContext';
-// import { useDashboardFilter } from '../../context/DashboardFilterContext';
 
 interface Block {
     id: string;
@@ -34,6 +31,11 @@ interface UploadLecturePageProps {
   uploadContext?: {
       course_id: string;
       subject_name: string;
+      university_id?: string;
+      college_id?: string;
+      department_id?: string;
+      batch_id?: string;
+      semester_id?: string;
       schoolId?: string;
       stageId?: string;
       gradeId?: string;
@@ -43,10 +45,10 @@ interface UploadLecturePageProps {
 }
 
 const UploadLecturePage: React.FC<UploadLecturePageProps> = ({ onBack, userData, uploadContext, initialData }) => {
-  const { startUpload, setProgress } = useUpload();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
-  // Removed local upload state in favor of UploadContext
+  const [uploadingBlockIndex, setUploadingBlockIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Core Metadata
   const [lectureData, setLectureData] = useState({
@@ -167,26 +169,37 @@ const UploadLecturePage: React.FC<UploadLecturePageProps> = ({ onBack, userData,
 
   const handleRemoveBlock = (id: string) => setBlocks(blocks.filter(b => b.id !== id));
 
-  const handleFileUpload = (index: number, type: 'image' | 'video' | 'audio' | 'pdf') => {
-      startUpload(
-          UnifiedUploadService.upload({ 
-              type,
-              token: `lec_${Math.random().toString(36).substr(2, 9)}`,
-              onProgress: (p) => setProgress(p)
-          }),
-          {
-              onComplete: (result) => {
-                  const newBlocks = [...blocks];
-                  newBlocks[index].url = result.url;
-                  newBlocks[index].title = result.fileName;
-                  newBlocks[index].fileId = result.fileId;
-                  setBlocks(newBlocks);
-                  
-                  UnifiedUploadService.clearCache();
-                  addToast('تم رفع ومعالجة الملف بنجاح ✅', 'success');
-              }
+  const handleFileUpload = async (index: number, type: 'image' | 'video' | 'audio' | 'pdf', file: File) => {
+      if (!file) return;
+      
+      const courseId = uploadContext?.course_id || initialData?.course_id || 'general';
+      setUploadingBlockIndex(index);
+      setUploadProgress(10); // Start progress
+
+      try {
+          const result = await TelegramService.uploadFile(file, 'lectures', courseId);
+          
+          if (result.success && result.url) {
+              const newBlocks = [...blocks];
+              newBlocks[index].url = result.url;
+              newBlocks[index].title = file.name;
+              newBlocks[index].fileId = result.fileId || result.shortId;
+              setBlocks(newBlocks);
+              
+              setUploadProgress(100);
+              addToast('تم رفع ومعالجة الملف بنجاح عبر جسر تيليجرام ✅', 'success');
+          } else {
+              throw new Error(result.error || 'فشل الرفع');
           }
-      );
+      } catch (error: any) {
+          console.error('Upload error:', error);
+          addToast(error.message || 'حدث خطأ أثناء الرفع', 'error');
+      } finally {
+          setTimeout(() => {
+              setUploadingBlockIndex(null);
+              setUploadProgress(0);
+          }, 1000);
+      }
   };
 
   const handleAddSupervisor = async () => {
@@ -403,16 +416,36 @@ const UploadLecturePage: React.FC<UploadLecturePageProps> = ({ onBack, userData,
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {!block.url ? (
-                                                    <button 
-                                                        onClick={() => handleFileUpload(index, block.type as any)}
-                                                        disabled={false}
-                                                        className="h-32 border-2 border-dashed border-primary/20 rounded-2xl flex flex-col items-center justify-center hover:bg-primary/5 transition-all cursor-pointer group"
-                                                    >
-                                                        <div className="flex flex-col items-center gap-2 text-primary group-hover:scale-110 transition-transform">
-                                                            <UploadCloud className="w-8 h-8" />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">رفع ملف (حتى 50GB)</span>
-                                                        </div>
-                                                    </button>
+                                                    <div className="relative h-32">
+                                                        <input 
+                                                            type="file" 
+                                                            id={`file-upload-${index}`}
+                                                            className="hidden"
+                                                            accept={block.type === 'video' ? 'video/*' : block.type === 'audio' ? 'audio/*' : block.type === 'pdf' ? '.pdf' : 'image/*'}
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) handleFileUpload(index, block.type as any, file);
+                                                            }}
+                                                        />
+                                                        <label 
+                                                            htmlFor={`file-upload-${index}`}
+                                                            className={`h-full w-full border-2 border-dashed border-primary/20 rounded-2xl flex flex-col items-center justify-center hover:bg-primary/5 transition-all cursor-pointer group ${uploadingBlockIndex === index ? 'opacity-50 pointer-events-none' : ''}`}
+                                                        >
+                                                            <div className="flex flex-col items-center gap-2 text-primary group-hover:scale-110 transition-transform">
+                                                                {uploadingBlockIndex === index ? (
+                                                                    <>
+                                                                        <Loader2 className="w-8 h-8 animate-spin" />
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest">جاري الرفع... {uploadProgress}%</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <UploadCloud className="w-8 h-8" />
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest">رفع ملف (تيليجرام)</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </label>
+                                                    </div>
                                                 ) : (
                                                     <div className="h-32 p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-2xl flex flex-col items-center justify-center gap-2">
                                                         <CheckCircle2 className="w-8 h-8 text-emerald-500" />

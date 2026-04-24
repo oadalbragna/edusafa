@@ -17,7 +17,9 @@ export type ActivityType =
   | 'support_ticket_created'
   | 'user_approved'
   | 'user_rejected'
-  | 'announcement_posted';
+  | 'announcement_posted'
+  | 'permission_updated'
+  | 'role_updated';
 
 interface ActivityParams {
   type: ActivityType;

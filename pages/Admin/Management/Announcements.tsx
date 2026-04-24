@@ -36,20 +36,51 @@ const Announcements: React.FC = () => {
     title: '',
     content: '',
     imageUrl: '',
-    target: 'all',
+    targetScope: 'global' as 'global' | 'level' | 'grade' | 'class',
+    level: 'primary',
+    grade: '1',
+    classId: '',
     priority: 'normal',
     status: 'public'
   };
 
   const [newAnn, setNewAnn] = useState(initialAnnState);
+  const [classes, setClasses] = useState<any[]>([]);
 
   useEffect(() => {
-    const annRef = ref(db, 'sys/announcements');
+    // Fetch classes for targeting
+    const classesRef = ref(db, 'edu/sch/classes');
+    get(classesRef).then(snap => {
+        if (snap.exists()) {
+            const data = snap.val();
+            const flattened: any[] = [];
+            Object.keys(data).forEach(level => {
+                Object.keys(data[level]).forEach(grade => {
+                    Object.keys(data[level][grade]).forEach(classId => {
+                        flattened.push({ ...data[level][grade][classId], id: classId, level, grade });
+                    });
+                });
+            });
+            setClasses(flattened);
+        }
+    });
+
+    const annRef = ref(db, 'edu/announcements');
     const unsubscribe = onValue(annRef, (snapshot) => {
       if (snapshot.exists()) {
-        const data = Object.entries(snapshot.val()).map(([id, val]: any) => ({ ...val, id }));
-        data.sort((a: any, b: any) => b.timestamp - a.timestamp);
-        setAnnouncements(data);
+        const data = snapshot.val();
+        const announcementsList: any[] = [];
+        
+        // Recursive fetch to get all announcements
+        const traverse = (obj: any) => {
+            Object.keys(obj).forEach(key => {
+                if (obj[key].title) announcementsList.push({ ...obj[key], id: key });
+                else traverse(obj[key]);
+            });
+        };
+        traverse(data);
+        announcementsList.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setAnnouncements(announcementsList);
       } else setAnnouncements([]);
       setLoading(false);
     });
@@ -71,14 +102,19 @@ const Announcements: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let path = 'edu/announcements/global';
+      if (newAnn.targetScope === 'level') path = `edu/announcements/${newAnn.level}`;
+      else if (newAnn.targetScope === 'grade') path = `edu/announcements/${newAnn.level}/${newAnn.grade}`;
+      else if (newAnn.targetScope === 'class') {
+          const cls = classes.find(c => c.id === newAnn.classId);
+          path = `edu/announcements/${cls.level}/${cls.grade}/${newAnn.classId}`;
+      }
+
       if (editingAnn) {
-        const annRef = ref(db, `sys/announcements/${editingAnn.id}`);
-        await update(annRef, {
-          ...newAnn,
-          updatedAt: new Date().toISOString()
-        });
+        // Simple update: re-save at current location
+        await update(ref(db, `${path}/${editingAnn.id}`), { ...newAnn, updatedAt: new Date().toISOString() });
       } else {
-        const annRef = push(ref(db, 'sys/announcements'));
+        const annRef = push(ref(db, path));
         await set(annRef, {
           ...newAnn,
           id: annRef.key,

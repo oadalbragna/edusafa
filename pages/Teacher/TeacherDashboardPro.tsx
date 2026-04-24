@@ -385,9 +385,12 @@ const TeacherDashboardPro: React.FC = () => {
 
   const handleDeleteMaterial = async (materialId: string, type: string) => {
     if (!window.confirm('هل أنت متأكد من حذف هذه المادة؟')) return;
+    const cls = classes.find(c => c.id === selectedClass);
+    if (!cls) return;
 
     try {
-      await remove(ref(db, `${EDU.SCH.CLASSES}/${selectedClass}/materials/${selectedSubject}/${type}s/${materialId}`));
+      const path = EDU.SCH.classSubjectMaterials(cls.level, cls.grade, selectedClass, selectedSubject, type + 's');
+      await remove(ref(db, `${path}/${materialId}`));
       toast.showSuccess('تم الحذف بنجاح');
       fetchData();
     } catch (error: any) {

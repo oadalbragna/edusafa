@@ -36,11 +36,20 @@ const AddClassForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const classRef = push(ref(db, 'edu/sch/classes'));
+      // Create path based on hierarchy
+      const path = `edu/sch/classes/${formData.level}/${formData.grade}`;
+      const classRef = push(ref(db, path));
       const classId = classRef.key;
-      await set(classRef, { ...formData, id: classId, createdAt: new Date().toISOString(), subjects: [] });
+      
+      await set(classRef, { 
+        ...formData, 
+        id: classId, 
+        createdAt: new Date().toISOString(), 
+        subjects: [] 
+      });
+      
       setDone(true);
-      setTimeout(() => { onSuccess(); navigate(`/admin/class/${classId}`); }, 1500);
+      setTimeout(() => { onSuccess(); navigate(`/admin/classes`); }, 1500);
     } catch (err) { alert('حدث خطأ أثناء إضافة الفصل'); } finally { setLoading(false); }
   };
 

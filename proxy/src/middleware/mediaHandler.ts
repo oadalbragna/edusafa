@@ -102,7 +102,7 @@ export class MediaHandler {
       logger.info('Media request', { fileId, ip: clientIp, userAgent: request.headers.get('user-agent') });
 
       // Get file stream from Telegram
-      const { stream, contentType, contentLength } = await this.telegramService.streamFile(fileId);
+      const { stream, contentType, contentLength, status, headers: telegramHeaders } = await this.telegramService.streamFile(fileId, request.headers);
 
       // Determine content type from file path or default to application/octet-stream
       const fileExt = fileId.split('.').pop()?.toLowerCase() || '';
@@ -113,12 +113,15 @@ export class MediaHandler {
       headers.set('Content-Type', detectedContentType);
       headers.set('Cache-Control', `public, max-age=${Math.floor(this.config.cacheTTL / 1000)}`);
       headers.set('X-Content-Type-Options', 'nosniff');
+      
+      // Copy relevant headers from Telegram (especially Content-Range)
+      telegramHeaders.forEach((value, key) => {
+        headers.set(key, value);
+      });
+
+      // Ensure Accept-Ranges is set
       headers.set('Accept-Ranges', 'bytes');
       
-      if (contentLength) {
-        headers.set('Content-Length', contentLength.toString());
-      }
-
       // Add rate limit info to headers
       if (clientIp) {
         headers.set('X-RateLimit-Limit', this.config.rateLimitMaxRequests.toString());
@@ -133,12 +136,13 @@ export class MediaHandler {
         duration: `${duration}ms`,
         contentType: detectedContentType,
         contentLength,
+        status,
         cached: true
       });
 
       // Return streaming response
       return new Response(stream as any, {
-        status: 200,
+        status,
         headers
       });
 

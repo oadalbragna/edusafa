@@ -8,8 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ref, push, set, onValue, remove, serverTimestamp, update } from 'firebase/database';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../../services/firebase';
+import { TelegramService } from '../../services/telegram.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
 import {
@@ -130,30 +130,21 @@ const CourseContentStudio: React.FC = () => {
     setUploadProgress(0);
 
     try {
-      const storage = getStorage();
-      const timestamp = Date.now();
-      const fileName = `${profile.uid}/${courseId}/${timestamp}_${file.name}`;
-      const fileRef = storageRef(storage, `courses/${fileName}`);
+      // Use TelegramService for unified uploading via the bridge
+      const result = await TelegramService.uploadFile(file, 'course_content', courseId);
 
-      // Upload file
-      const snapshot = await uploadBytes(fileRef, file, {
-        customMetadata: {
-          courseId,
-          uploadedBy: profile.uid,
-          timestamp: timestamp.toString()
-        }
-      });
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'فشل الرفع عبر جسر تيليجرام');
+      }
 
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      // Update block with file URL
+      // Update block with proxied URL from Telegram Bridge
       updateBlock(blockId, {
-        url: downloadURL,
-        fileId: fileName,
+        url: result.url,
+        fileId: result.fileId || result.shortId,
         title: file.name
       });
 
-      showSuccess('تم رفع الملف بنجاح');
+      showSuccess('تم رفع الملف بنجاح عبر جسر تيليجرام');
     } catch (error: any) {
       console.error('File upload error:', error);
       showError('فشل رفع الملف: ' + (error.message || 'خطأ غير معروف'));
@@ -192,7 +183,21 @@ const CourseContentStudio: React.FC = () => {
         return;
       }
 
-      const lessonData = {
+      // Helper function to remove undefined values for Firebase compatibility
+      const removeUndefined = (obj: any): any => {
+        if (Array.isArray(obj)) {
+          return obj.map(item => removeUndefined(item));
+        } else if (obj !== null && typeof obj === 'object') {
+          return Object.fromEntries(
+            Object.entries(obj)
+              .filter(([_, value]) => value !== undefined)
+              .map(([key, value]) => [key, removeUndefined(value)])
+          );
+        }
+        return obj;
+      };
+
+      const rawLessonData = {
         title: lessonTitle.trim(),
         description: lessonDescription.trim(),
         lessonNumber: parseInt(lessonNumber) || existingLessons.length + 1,
@@ -203,6 +208,9 @@ const CourseContentStudio: React.FC = () => {
         createdAt: editingLesson?.createdAt || Date.now(),
         updatedAt: Date.now()
       };
+
+      // Clean the data before sending to Firebase
+      const lessonData = removeUndefined(rawLessonData);
 
       const lessonRef = ref(db, `edu/courses/${courseId}/lessons/${lessonId}`);
       await set(lessonRef, lessonData);

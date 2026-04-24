@@ -152,43 +152,56 @@ export class TelegramService {
   /**
    * Stream file directly from Telegram (memory efficient)
    */
-  async streamFile(fileId: string, onProgress?: (bytes: number) => void): Promise<{
+  async streamFile(fileId: string, requestHeaders?: Headers): Promise<{
     stream: ReadableStream<Uint8Array>;
     contentType?: string;
     contentLength?: number;
+    status: number;
+    headers: Headers;
   }> {
     const cachedUrl = await this.getCachedUrl(fileId);
     
     logger.debug('Streaming file', { fileId, url: cachedUrl.url });
     
-    const response = await fetch(cachedUrl.url);
+    // Extract range header if present
+    const fetchHeaders = new Headers();
+    if (requestHeaders && requestHeaders.has('range')) {
+      fetchHeaders.set('range', requestHeaders.get('range')!);
+    }
     
-    if (!response.ok) {
+    let response = await fetch(cachedUrl.url, { headers: fetchHeaders });
+    
+    if (!response.ok && response.status !== 206) {
       // If streaming fails and URL might be expired, try refreshing
       if (response.status === 404 || response.status === 403) {
         logger.warn('Stream failed with expired URL, refreshing', { fileId, status: response.status });
         this.cache.delete(fileId); // Clear cache
         const freshUrl = await this.refreshUrl(fileId);
         
-        const retryResponse = await fetch(freshUrl.url);
-        if (!retryResponse.ok) {
-          throw new Error(`Failed to stream file after refresh: ${retryResponse.status} ${retryResponse.statusText}`);
+        response = await fetch(freshUrl.url, { headers: fetchHeaders });
+        if (!response.ok && response.status !== 206) {
+          throw new Error(`Failed to stream file after refresh: ${response.status} ${response.statusText}`);
         }
-        
-        return {
-          stream: retryResponse.body!,
-          contentType: retryResponse.headers.get('content-type') || undefined,
-          contentLength: parseInt(retryResponse.headers.get('content-length') || '0', 10)
-        };
+      } else {
+        throw new Error(`Failed to stream file: ${response.status} ${response.statusText}`);
       }
-      
-      throw new Error(`Failed to stream file: ${response.status} ${response.statusText}`);
     }
     
+    const responseHeaders = new Headers();
+    // Copy relevant headers from Telegram response
+    const headersToCopy = ['content-type', 'content-length', 'content-range', 'accept-ranges'];
+    headersToCopy.forEach(h => {
+      if (response.headers.has(h)) {
+        responseHeaders.set(h, response.headers.get(h)!);
+      }
+    });
+
     return {
       stream: response.body!,
       contentType: response.headers.get('content-type') || undefined,
-      contentLength: parseInt(response.headers.get('content-length') || '0', 10)
+      contentLength: parseInt(response.headers.get('content-length') || '0', 10),
+      status: response.status,
+      headers: responseHeaders
     };
   }
 
@@ -265,12 +278,18 @@ export class TelegramService {
       throw new Error(`Failed to send document: ${data.description}`);
     }
     
-    const result = data.result.document;
-    logger.info('Document sent to Telegram', { fileId: result.file_id, fileName });
+    const result = data.result;
+    const fileData = result.document || result.video || result.audio || (result.photo ? result.photo[result.photo.length - 1] : null) || result.voice;
+    
+    if (!fileData || !fileData.file_id) {
+      throw new Error('Invalid Telegram response: file_id not found');
+    }
+
+    logger.info('Document sent to Telegram', { fileId: fileData.file_id, fileName });
     
     return {
-      fileId: result.file_id,
-      fileName: result.file_name || fileName
+      fileId: fileData.file_id,
+      fileName: fileData.file_name || fileName
     };
   }
 
