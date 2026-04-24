@@ -74,7 +74,14 @@ const SliderManagement: React.FC = () => {
 
     const unsubClasses = onValue(classesRef, (snapshot) => {
       if (snapshot.exists()) {
-        setClasses(Object.values(snapshot.val()));
+        const data = snapshot.val();
+        const allClasses: any[] = [];
+        Object.keys(data).forEach(level => {
+          Object.keys(data[level]).forEach(grade => {
+             allClasses.push({ ...data[level][grade], level, grade, id: grade });
+          });
+        });
+        setClasses(allClasses);
       } else {
         setClasses([]);
       }
