@@ -81,19 +81,22 @@ const ChatPage: React.FC = () => {
         });
 
         if (profile.role === 'student') {
-          const classRef = ref(db, `edu/sch/classes/${profile.classId}`);
+          // New hierarchy: level/grade
+          const classRef = ref(db, `edu/sch/classes/${profile.eduLevel}/${profile.grade}`);
           const classSnap = await get(classRef);
           if (classSnap.exists()) {
-            const teacherIds = (classSnap.val().subjects || []).map((s: any) => s.teacherId).filter(Boolean);
+            const classData = classSnap.val();
+            const teacherIds = Object.values(classData.subjects || {}).map((s: any) => s.teacherId).filter(Boolean);
             setTeachers(Object.values(allUsers).filter((u: any) => teacherIds.includes(u.uid)));
           }
         } else if (profile.role === 'parent') {
           const children = Object.values(allUsers).filter((u: any) => u.uid === profile.studentLink || u.parentUid === profile.uid || u.parentEmail === profile.email) as any[];
           const teachersList: any[] = [];
           for (const child of children) {
-            const classSnap = await get(ref(db, `edu/sch/classes/${child.classId}`));
+            const classSnap = await get(ref(db, `edu/sch/classes/${child.eduLevel}/${child.grade}`));
             if (classSnap.exists()) {
-              const teacherIds = (classSnap.val().subjects || []).map((s: any) => s.teacherId).filter(Boolean);
+              const classData = classSnap.val();
+              const teacherIds = Object.values(classData.subjects || {}).map((s: any) => s.teacherId).filter(Boolean);
               teachersList.push(...Object.values(allUsers).filter((u: any) => teacherIds.includes(u.uid)).map(u => ({...u, childName: child.firstName})));
             }
           }
