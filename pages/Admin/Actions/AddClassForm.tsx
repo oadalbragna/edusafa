@@ -36,14 +36,14 @@ const AddClassForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Create path based on hierarchy
-      const path = `edu/sch/classes/${formData.level}/${formData.grade}`;
-      const classRef = push(ref(db, path));
-      const classId = classRef.key;
+      // Use grade as the primary key
+      const classKey = formData.grade.trim();
+      const path = `edu/sch/classes/${formData.level}/${classKey}`;
+      const classRef = ref(db, path);
       
       await set(classRef, { 
         ...formData, 
-        id: classId, 
+        id: classKey, // Store the grade as the id
         createdAt: new Date().toISOString(), 
         subjects: [] 
       });
