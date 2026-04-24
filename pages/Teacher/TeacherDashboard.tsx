@@ -304,9 +304,9 @@ const TeacherDashboard: React.FC = () => {
           setGlobalSubjects(filteredGS);
         }
 
-        // Fetch My Requests (New Section)
-        const requestsRef = ref(db, 'sys/config/teacher_class_requests');
-        onValue(requestsRef, (snapshot) => {
+        // Fetch My Requests
+        const reqsRef = ref(db, 'sys/config/teacher_class_requests');
+        onValue(reqsRef, (snapshot) => {
           if (snapshot.exists()) {
             const allReqs = Object.values(snapshot.val());
             const filteredReqs = allReqs.filter((r: any) => r.teacherId === profile.uid).map((r: any) => {
