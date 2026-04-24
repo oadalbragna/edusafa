@@ -114,7 +114,16 @@ const AcademicCurriculum: React.FC = () => {
     const classesRef = ref(db, 'edu/sch/classes');
     const unsubClasses = onValue(classesRef, (snapshot) => {
       if (snapshot.exists()) {
-        setClasses(Object.values(snapshot.val()));
+        const data = snapshot.val();
+        const allClasses: ClassType[] = [];
+        Object.keys(data).forEach(level => {
+          Object.keys(data[level]).forEach(grade => {
+             allClasses.push({ ...data[level][grade], level, grade });
+          });
+        });
+        setClasses(allClasses);
+      } else {
+        setClasses([]);
       }
     });
 
