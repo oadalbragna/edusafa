@@ -318,7 +318,7 @@ const GlobalSubjects: React.FC = () => {
             className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3"
           >
             {editingSubject ? <Save size={20} /> : <CheckCircle2 size={20} />}
-            {editingSubject ? "حفظ التعديلات" : "اعتماد المادة في القائمة"}
+            {editingSubject ? "حفظ التعديلات" : "اعتماد المادة في المادة"}
           </button>
         </form>
       </Modal>
