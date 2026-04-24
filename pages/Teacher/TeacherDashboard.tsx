@@ -263,15 +263,17 @@ const TeacherDashboard: React.FC = () => {
               });
             });
           });
-                const classData = {
-                  classId: cls.id,
-                  className: cls.name,
-                  subjectId: sub.id || sub.name,
-                  subjectName: sub.name,
-                  level: cls.level,
-                  grade: cls.grade
-                };
-              }
+                  const classData = {
+                    classId: cls.id,
+                    className: cls.name,
+                    subjectId: sub.id || sub.name,
+                    subjectName: sub.name,
+                    level: cls.level,
+                    grade: cls.grade
+                  };
+                  assigned.push(classData);
+                }
+              });
             });
           });
           setAssignedSubjects(assigned);
