@@ -322,7 +322,6 @@ const GlobalSubjects: React.FC = () => {
           </button>
         </form>
       </Modal>
-    </div>
   );
 };
 
