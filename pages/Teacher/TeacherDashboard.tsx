@@ -271,7 +271,6 @@ const TeacherDashboard: React.FC = () => {
                   level: cls.level,
                   grade: cls.grade
                 };
-                });
               }
             });
           });
