@@ -427,9 +427,15 @@ export async function getAdminParentRequests(): Promise<ParentLinkRequest[]> {
   if (!snapshot.exists()) return [];
 
   const requests = snapshot.val();
+  // We want to see everything that is at least 'proof_uploaded' (ready for admin review)
+  // or maybe all non-approved/non-rejected requests to be safe
   return Object.values(requests)
-    .filter((r: any) => r.status === 'proof_reviewed_by_student')
-    .sort((a: any, b: any) => b.proofReviewedAt || b.studentApprovedAt - a.proofReviewedAt || a.studentApprovedAt);
+    .filter((r: any) => 
+      r.status === 'proof_uploaded' || 
+      r.status === 'proof_reviewed_by_student' ||
+      r.status === 'student_approved'
+    )
+    .sort((a: any, b: any) => (b.proofUploadedAt || b.studentApprovedAt || 0) - (a.proofUploadedAt || a.studentApprovedAt || 0));
 }
 
 /**
