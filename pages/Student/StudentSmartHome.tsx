@@ -291,13 +291,12 @@ const StudentSmartHome: React.FC = () => {
       // Fetch Class & Subjects
       try {
         if (profile?.eduLevel && profile?.grade) {
-          const classesRef = ref(db, `edu/sch/classes/${profile.eduLevel}/${profile.grade}`);
-          const snapshot = await get(classesRef);
+          const classRef = ref(db, `edu/sch/classes/${profile.eduLevel}/${profile.grade}`);
+          const snapshot = await get(classRef);
           if (snapshot.exists()) {
-            const classesData = snapshot.val();
-            const foundClass = Object.values(classesData).find((cls: any) => cls.id === currentClassId);
+            const foundClass = snapshot.val();
             setMyClass(foundClass);
-            if (foundClass?.subjects) setClassSubjects(foundClass.subjects.filter((s: any) => s.status === 'public'));
+            if (foundClass?.subjects) setClassSubjects(Object.values(foundClass.subjects).filter((s: any) => s.status === 'public'));
           }
         }
       } catch (err) { console.error('Class fetch error:', err); }
