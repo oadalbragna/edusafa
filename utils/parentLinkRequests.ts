@@ -180,8 +180,41 @@ export async function validateParentInviteCode(code: string): Promise<{
 }
 
 /**
- * Create a parent link request (instead of instant linking)
- * This creates a pending request that requires student and admin approval
+ * Remove a parent-student link
+ */
+export async function removeParentLink(
+  studentUid: string,
+  parentUid: string
+): Promise<{ success: boolean; errorMessage?: string }> {
+  try {
+    const studentRef = ref(db, SYS.user(studentUid));
+    const parentRef = ref(db, SYS.user(parentUid));
+
+    const studentSnap = await get(studentRef);
+    const parentSnap = await get(parentRef);
+
+    if (!studentSnap.exists()) return { success: false, errorMessage: 'الطالب غير موجود' };
+
+    const studentData = studentSnap.val();
+    const parentLinks = (studentData.parentLinks || []).filter((id: string) => id !== parentUid);
+    
+    await update(studentRef, { parentLinks });
+
+    if (parentSnap.exists()) {
+      const parentData = parentSnap.val();
+      const studentLinks = (parentData.studentLinks || []).filter((id: string) => id !== studentUid);
+      await update(parentRef, { studentLinks });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error removing parent link:', error);
+    return { success: false, errorMessage: 'حدث خطأ أثناء إلغاء الربط' };
+  }
+}
+
+/**
+ * Create a parent link request
  */
 export async function createParentLinkRequest(
   parentUid: string,
@@ -194,37 +227,35 @@ export async function createParentLinkRequest(
   studentEmail: string
 ): Promise<{ success: boolean; requestId?: string; errorMessage?: string }> {
   try {
-    // Check if there's already a pending request from this parent to this student
     const requestsRef = ref(db, SYS.CONFIG.PARENT_LINK_REQUESTS);
     const snapshot = await get(requestsRef);
     
     if (snapshot.exists()) {
       const requests = snapshot.val();
+      // Check for active or pending requests
       const existingRequest = Object.values(requests).find((req: any) => 
         req.parentUid === parentUid && 
         req.studentUid === studentUid && 
-        req.status === 'pending'
+        (req.status === 'pending' || req.status === 'student_approved' || req.status === 'proof_uploaded')
       );
       
       if (existingRequest) {
-        return { success: false, errorMessage: 'لديك طلب معلق بالفعل لهذا الطالب' };
-      }
-
-      // Check if parent is already linked
-      const studentRef = ref(db, SYS.user(studentUid));
-      const studentSnap = await get(studentRef);
-      
-      if (studentSnap.exists()) {
-        const studentData = studentSnap.val();
-        const parentLinks = studentData.parentLinks || [];
-        
-        if (parentLinks.includes(parentUid)) {
-          return { success: false, errorMessage: 'أنت مرتبط بالفعل بهذا الطالب' };
-        }
+        return { success: false, errorMessage: 'لديك طلب ربط نشط بالفعل لهذا الطالب' };
       }
     }
 
-    // Create new request
+    const studentRef = ref(db, SYS.user(studentUid));
+    const studentSnap = await get(studentRef);
+    
+    if (studentSnap.exists()) {
+      const studentData = studentSnap.val();
+      const parentLinks = studentData.parentLinks || [];
+      
+      if (parentLinks.includes(parentUid)) {
+        return { success: false, errorMessage: 'أنت مرتبط بالفعل بهذا الطالب ولا يمكن طلب الربط مرة أخرى' };
+      }
+    }
+
     const now = new Date();
     const expiresAt = new Date(now);
     expiresAt.setDate(expiresAt.getDate() + 7);
