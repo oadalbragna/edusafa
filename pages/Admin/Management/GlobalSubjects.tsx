@@ -207,7 +207,7 @@ const GlobalSubjects: React.FC = () => {
                     )}
                   </div>
                   <button 
-                    onClick={() => toggleCertified(subject.id, subject.isCertified)}
+                    onClick={() => toggleStatus(subject)}
                     className={`text-[9px] font-black px-3 py-1 rounded-lg transition-all ${subject.isCertified ? 'bg-amber-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
                   >
                     {subject.isCertified ? 'إلغاء الاعتماد' : 'تفعيل الاعتماد'}
