@@ -64,7 +64,7 @@ export const TeacherRequests: React.FC = () => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         const allUsers = Object.keys(data).map(key => ({ ...data[key], uid: key }));
-        setUserRequests(allUsers.filter((u: any) => (u.role === 'teacher' || u.role === 'student') && u.status === 'pending'));
+        setUserRequests(allUsers.filter((u: any) => (u.role === 'teacher' || u.role === 'student' || u.role === 'parent') && u.status === 'pending'));
       } else setUserRequests([]);
     });
 
