@@ -87,7 +87,7 @@ export const EDU = {
     CLASSES: `${DB_ROOT.EDU}/sch/classes`,
     // New hierarchical path
     classesByGrade: (level: string, grade: string) => `${DB_ROOT.EDU}/sch/classes/${level}/${grade}`,
-    class: (level: string, grade: string, classId: string) => `${DB_ROOT.EDU}/sch/classes/${level}/${grade}/${classId}`,
+    class: (level: string, grade: string) => `${DB_ROOT.EDU}/sch/classes/${level}/${grade}`,
     
     classStudents: (classId: string) => `${DB_ROOT.EDU}/sch/classes/students/${classId}`, // Keeping students mapping accessible
     classStudent: (classId: string, uid: string) => `${DB_ROOT.EDU}/sch/classes/students/${classId}/${uid}`,
