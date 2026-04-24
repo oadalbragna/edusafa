@@ -306,16 +306,15 @@ const TeacherDashboard: React.FC = () => {
 
         // Fetch My Requests
         const reqsRef = ref(db, 'sys/config/teacher_class_requests');
-        onValue(reqsRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const allReqs = Object.values(snapshot.val());
-            const filteredReqs = allReqs.filter((r: any) => r.teacherId === profile.uid).map((r: any) => {
-              const cls = classesData[r.classId];
-              return { ...r, className: cls?.name || 'فصل غير معروف', level: cls?.level, grade: cls?.grade };
-            });
-            setMyRequests(filteredReqs);
-          }
-        });
+        const reqSnap = await get(reqsRef);
+        if (reqSnap.exists()) {
+          const allReqs = Object.values(reqSnap.val());
+          const filteredReqs = allReqs.filter((r: any) => r.teacherId === profile.uid).map((r: any) => {
+            const cls = classesData[r.classId];
+            return { ...r, className: cls?.name || 'فصل غير معروف', level: cls?.level, grade: cls?.grade };
+          });
+          setMyRequests(filteredReqs);
+        }
       } catch (err) {
         console.error("Error fetching assigned subjects:", err);
       } finally {
