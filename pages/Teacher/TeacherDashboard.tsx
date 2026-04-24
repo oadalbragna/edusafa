@@ -236,18 +236,33 @@ const TeacherDashboard: React.FC = () => {
           }
 
           const assigned: AssignedSubject[] = [];
-          Object.values(classesData).forEach((cls: any) => {
-            // Check if class is approved for this teacher OR if they were assigned directly by admin
-            const isApproved = approvedClassIds.has(cls.id);
-            if (!isApproved) return;
+          // Traverse hierarchical structure: level -> grade
+          Object.keys(classesData).forEach(level => {
+            Object.keys(classesData[level]).forEach(grade => {
+              const cls = classesData[level][grade];
+              const classId = grade; // grade is the new ID
 
-            if (profile.blockedClasses?.includes(cls.id)) return;
+              // Check if class is approved for this teacher
+              const isApproved = approvedClassIds.has(classId);
+              if (!isApproved) return;
 
-            cls.subjects?.forEach((sub: any) => {
-              if (profile.blockedSubjects?.includes(sub.id || sub.name)) return;
+              if (profile.blockedClasses?.includes(classId)) return;
 
-              if (sub.teacherId === profile.uid) {
-                assigned.push({
+              Object.values(cls.subjects || {}).forEach((sub: any) => {
+                if (profile.blockedSubjects?.includes(sub.id || sub.name)) return;
+
+                if (sub.teacherId === profile.uid) {
+                  assigned.push({
+                    ...sub,
+                    classId: classId,
+                    className: cls.name,
+                    level: level,
+                    grade: grade
+                  });
+                }
+              });
+            });
+          });
                   classId: cls.id,
                   className: cls.name,
                   subjectId: sub.id || sub.name,
