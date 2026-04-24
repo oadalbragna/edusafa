@@ -49,6 +49,8 @@ const GlobalSubjects: React.FC = () => {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, []);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubject.name) return;
