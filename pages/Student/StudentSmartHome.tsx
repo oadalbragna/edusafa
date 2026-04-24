@@ -14,7 +14,7 @@ import {
   Search, Menu, X, PlayCircle, Zap, Award, ClipboardList,
   BarChart3, LogOut, Edit2, Save, Eye, EyeOff, Shield,
   RefreshCw, Check, AlertCircle, ExternalLink, Users, Link,
-  Copy, QrCode, GraduationCap
+  Copy, QrCode, GraduationCap, FileText
 } from 'lucide-react';
 import { db } from '../../services/firebase';
 import { ref, get, onValue, query, orderByChild, limitToLast, update } from 'firebase/database';
