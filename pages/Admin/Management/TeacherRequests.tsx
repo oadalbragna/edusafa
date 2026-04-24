@@ -59,6 +59,15 @@ export const TeacherRequests: React.FC = () => {
     });
 
     // ... (rest of logic)
+    // 2. Fetch Pending User Requests
+    const unsubUsers = onValue(usersRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const allUsers = Object.keys(data).map(key => ({ ...data[key], uid: key }));
+        setUserRequests(allUsers.filter((u: any) => (u.role === 'teacher' || u.role === 'student') && u.status === 'pending'));
+      } else setUserRequests([]);
+    });
+
     // 3. Fetch Pending Class Requests
     const unsubClassReqs = onValue(classReqRef, (snapshot) => {
       if (snapshot.exists()) {
