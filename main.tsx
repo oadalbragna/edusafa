@@ -89,8 +89,12 @@ import { GlobalErrorBoundary } from './components/common/GlobalErrorBoundary'
 
 // ... existing setup logic
 
+import { ClassProvider } from './context/ClassContext'
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GlobalErrorBoundary>
-    <App />
+    <ClassProvider>
+      <App />
+    </ClassProvider>
   </GlobalErrorBoundary>
 )
