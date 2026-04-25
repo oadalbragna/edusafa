@@ -159,6 +159,10 @@ const TeacherDashboard: React.FC = () => {
       await set(ref(db, `sys/system/settings/branding/${selectedSubject.classId}/${selectedSubject.subjectId}`), brandingData);
       alert('تم حفظ إعدادات الواجهة بنجاح');
       setBrandingModal(false);
+    } catch (error) {
+      console.error("Error saving branding:", error);
+      alert('حدث خطأ أثناء حفظ الإعدادات');
+    } finally {
       setUploading(false);
     }
   };
