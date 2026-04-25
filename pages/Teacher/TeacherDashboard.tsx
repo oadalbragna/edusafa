@@ -31,6 +31,7 @@ import {
   Image as ImageIcon,
   LifeBuoy
 } from 'lucide-react';
+import { FloatingClassSelector } from '../../components/common/FloatingClassSelector';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db, storage } from '../../services/firebase';
@@ -179,6 +180,10 @@ const TeacherDashboard: React.FC = () => {
         ...prev,
         subjectSlides: [...prev.subjectSlides || [], { id: Date.now().toString(), imageUrl: url, active: true }]
       }));
+    } catch (error) {
+      console.error("Error uploading slide:", error);
+      alert('حدث خطأ أثناء رفع الشريحة');
+    } finally {
       setUploading(false);
     }
   };
@@ -215,14 +220,61 @@ const TeacherDashboard: React.FC = () => {
     const fetchAssignedData = async () => {
       if (!profile?.uid) return;
       try {
+        setLoading(true);
         const classesRef = ref(db, 'edu/sch/classes');
         const snapshot = await get(classesRef);
+        
+        if (snapshot.exists()) {
+          const classesData = snapshot.val();
+          
+          // 1. Fetch Approved Class Requests
+          const requestsRef = ref(db, 'sys/config/teacher_class_requests');
+          const reqSnap = await get(requestsRef);
+          const approvedClassIds = new Set<string>();
+          
+          if (reqSnap.exists()) {
+            Object.values(reqSnap.val()).forEach((r: any) => {
+              if (r.teacherId === profile.uid && r.status === 'approved') {
+                approvedClassIds.add(r.classId);
+              }
+            });
+          }
+
+          const assigned: any[] = [];
+          Object.keys(classesData).forEach(level => {
+            Object.keys(classesData[level]).forEach(grade => {
+              const cls = classesData[level][grade];
+              const classId = grade;
+              if (approvedClassIds.has(classId) && !profile.blockedClasses?.includes(classId)) {
+                Object.values(cls.subjects || {}).forEach((sub: any) => {
+                  if (sub.teacherId === profile.uid && !profile.blockedSubjects?.includes(sub.id || sub.name)) {
+                    assigned.push({
+                      ...sub,
+                      classId: classId,
+                      className: cls.name,
+                      level: level,
+                      grade: grade
+                    });
+                  }
+                });
+              }
+            });
+          });
+          setAssignedSubjects(assigned);
+        }
+      } catch (err) {
+        console.error("Error fetching assigned subjects:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssignedData();
+  }, [profile]);
         if (snapshot.exists()) {
           const classesData = snapshot.val();
           
           // 1. Fetch Approved Class Requests for this teacher
           const requestsRef = ref(db, 'sys/config/teacher_class_requests');
-          const reqSnap = await get(requestsRef);
           const approvedClassIds = new Set<string>();
           
           if (reqSnap.exists()) {
