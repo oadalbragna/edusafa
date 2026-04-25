@@ -159,9 +159,6 @@ const TeacherDashboard: React.FC = () => {
       await set(ref(db, `sys/system/settings/branding/${selectedSubject.classId}/${selectedSubject.subjectId}`), brandingData);
       alert('تم حفظ إعدادات الواجهة بنجاح');
       setBrandingModal(false);
-    } catch (err) {
-      alert('فشل حفظ البيانات');
-    } finally {
       setUploading(false);
     }
   };
@@ -178,9 +175,6 @@ const TeacherDashboard: React.FC = () => {
         ...prev,
         subjectSlides: [...prev.subjectSlides || [], { id: Date.now().toString(), imageUrl: url, active: true }]
       }));
-    } catch (err) {
-      alert('فشل رفع الصورة');
-    } finally {
       setUploading(false);
     }
   };
@@ -315,9 +309,6 @@ const TeacherDashboard: React.FC = () => {
           });
           setMyRequests(filteredReqs);
         }
-      } catch (err) {
-        console.error("Error fetching assigned subjects:", err);
-      } finally {
         setLoading(false);
       }
       };
@@ -432,10 +423,6 @@ const TeacherDashboard: React.FC = () => {
 
       setPostModal(false);
       setNewPost({ title: '', content: '', url: '' });
-    } catch (err) {
-      console.error(err);
-      alert('فشل في حفظ البيانات');
-    } finally {
       setUploading(false);
     }
   };
@@ -491,10 +478,6 @@ const TeacherDashboard: React.FC = () => {
           else setMaterials(data);
         }
       }
-    } catch (err) {
-      console.error(err);
-      alert('فشل في رفع الملف');
-    } finally {
       setUploading(false);
     }
   };
@@ -503,9 +486,6 @@ const TeacherDashboard: React.FC = () => {
     try {
       await set(ref(db, `edu/submissions/${assignmentId}/${submissionId}/grade`), grade);
       setSubmissions(prev => prev.map(s => s.id === submissionId ? { ...s, grade } : s));
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const deleteMaterial = async (id: string) => {
